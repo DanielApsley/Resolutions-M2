@@ -18,8 +18,7 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 
 affineCharts(Ideal) := J -> (
 	listofCharts = {};
-	n = #gens J;
-	for i from 1 to n do (
+	for i from 1 to #gens do (
 		listofCharts = append(listofCharts, affineCharts(J, i))
 	);
 	listofCharts
