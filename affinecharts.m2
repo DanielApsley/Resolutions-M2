@@ -1,12 +1,12 @@
 affineCharts = method();
 affineCharts(Ideal, ZZ) := (J, m) -> (
-	A = ring(J);
-	a = reesIdeal(J); -- Ideal of rees algebra in affine space over A.
-	B = ring(a);
-	n = #gens B;
-	AffineRing = A[u_1..u_(n - 1)];
-	coolBeans = flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
-	phi = map(AffineRing, B, coolBeans);
+	A := ring(J);
+	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
+	B := ring(a);
+	n := #gens B;
+	AffineRing := A[u_1..u_(n - 1)];
+	coolBeans := flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
+	phi := map(AffineRing, B, coolBeans);
 	phi(a)
 );
 
@@ -17,14 +17,14 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 -- It would be nice to avoid the flatten flatten. Also, I would like to add an error message for when m is too big or small. 
 
 affineCharts(Ideal) := idealdude -> (
-	listofCharts = {};
+	listofCharts := {};
 	for i from 1 to (#gens idealdude) do (
 		 listofCharts = append(listofCharts, affineCharts(idealdude, i))
 	);
 	listofCharts
 );
 
--- This however, does not work. It is strange, since you can run the loop manually and it works fine. 
+-- This however, does not work. It is strange, since you can run the loop manually and it works fine.
 
 T = QQ[x,y,z];
-I = ideal(x^2, y, z);
+I = ideal(x^2, y, z); 
