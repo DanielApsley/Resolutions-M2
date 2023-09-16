@@ -27,4 +27,11 @@ affineCharts(Ideal) := idealdude -> (
 -- This however, does not work. It is strange, since you can run the loop manually and it works fine.
 
 T = QQ[x,y,z];
-I = ideal(x^2, y, z); 
+I = ideal(x^2, y, z);
+
+strictTransform = method();
+
+strictTransform(Ideal, ZZ) := (J, m) -> (
+
+);
+
