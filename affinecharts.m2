@@ -108,10 +108,6 @@ strictTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
 
 -- The first is the rougher version which works for general rings. The second is strictly for blowup up linear monomial ideals of polynomial rings. However, it outputs an ideal of a polynomial ring, so it is better behaved. 
 
-
-
--- TODO: Find a way to make the generators less redundant. 
-
 T = QQ[x,y];
 J = ideal(x,y);
 I = ideal(x^3 - x^2 + y^2); -- nodal cubic resolved by one blow-up at the origin. 
