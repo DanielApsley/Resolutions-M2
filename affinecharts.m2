@@ -3,7 +3,13 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 	A := ring(J);
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	B := ring(a);
+	structureB = map(B, A, {});
 	n := #gens B;
+
+	if (m < 1) or (m > n) then (
+		error "chart number out of range";
+	);
+
 	AffineRing := A[u_1..u_(n - 1)];
 	structureMap := map(AffineRing, A, {});
 	coolBeans := flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
@@ -15,8 +21,6 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 
 -- This function finds the m'th affine chart of the blowup of J, as an A algebra. 
 
--- TODO: Add an option to output just the ideal, make an error message when m is not in the allowed range. 
-
 affineCharts(Ideal) := idealdude -> (
 	listofCharts := {};
 	for i from 1 to (#gens idealdude) do (
@@ -26,6 +30,33 @@ affineCharts(Ideal) := idealdude -> (
 );
 
 -- TODO: Fix variable issues so the above runs.
+
+isLinear = method();
+isLinear(Ideal) := J -> (
+	dummycounter = 0;
+	L = flatten entries (gens J);
+	for l in L do (
+		if degree(l) == {1} then (
+			dummycounter = dummycounter + 1
+		);
+	);
+	dummycounter == #L
+);
+
+-- Tests if an ideal of a polynomial ring is cut out by linear equations. May need to take minimal generators of J. For now I only want to consider linear spaces cut out by coordinates.
+
+-- TODO: Find a function which gives a coordinate automorphism which takes any given linear ideal to a coordinate one. (eg. )
+
+linearBlowupChart = method();
+linearBlowupChart(Ideal, ZZ) := (J, m) -> (
+	if isLinear(J) == false then (
+		error "Expected linear ideal";
+	);
+	"TBC" 
+);
+
+-- The intention here is to output actual charts: regular isomorphism from an affine space. As such, this is reserved for blowing up linear ideals of affine space. This will hopefully have the benefit of being iterative, and more appropriate for taking strict tranforms.  
+
 
 strictTransform = method();
 
