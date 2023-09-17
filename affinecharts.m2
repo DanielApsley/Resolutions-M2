@@ -5,16 +5,17 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 	B := ring(a);
 	n := #gens B;
 	AffineRing := A[u_1..u_(n - 1)];
+	structureMap := map(AffineRing, A, {});
 	coolBeans := flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
 	phi := map(AffineRing, B, coolBeans);
-	phi(a)
+	quotient := AffineRing/phi(a);
+	projection := map(quotient, AffineRing, {});
+	projection * structureMap
 );
 
--- This function finds the m'th affine chart of the blowup of J. 
+-- This function finds the m'th affine chart of the blowup of J, as an A algebra. 
 
--- It works, but the variables and letter for your ideal needs to be different from the above. (eg. If you use I to represent your ideal and x_i to represent the variables in your ambient ring, this should work just fine.)
-
--- It would be nice to avoid the flatten flatten. Also, I would like to add an error message for when m is too big or small. 
+-- TODO: Add an option to output just the ideal, make an error message when m is not in the allowed range. 
 
 affineCharts(Ideal) := idealdude -> (
 	listofCharts := {};
@@ -24,14 +25,19 @@ affineCharts(Ideal) := idealdude -> (
 	listofCharts
 );
 
--- This however, does not work. It is strange, since you can run the loop manually and it works fine.
-
-T = QQ[x,y,z];
-I = ideal(x^2, y, z);
+-- TODO: Fix variable issues so the above runs.
 
 strictTransform = method();
 
-strictTransform(Ideal, ZZ) := (J, m) -> (
-
+strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
+	chartMap := affineCharts(J, m);
+	primaryDecomposition(chartMap(I))	
 );
 
+-- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. 
+
+-- TODO: Find a way to make the generators less redundant. 
+
+T = QQ[x,y];
+J = ideal(x,y);
+I = ideal(x^3 - x^2 + y^2); -- nodal cubic resolved by one blow-up at the origin. 
