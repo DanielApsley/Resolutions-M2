@@ -34,7 +34,7 @@ affineCharts(Ideal) := idealdude -> (
 isLinear = method();
 isLinear(Ideal) := J -> (
 	dummycounter = 0;
-	L = flatten entries (gens J);
+	L := flatten entries (gens J);
 	for l in L do (
 		if degree(l) == {1} then (
 			dummycounter = dummycounter + 1
@@ -47,16 +47,49 @@ isLinear(Ideal) := J -> (
 
 -- TODO: Find a function which gives a coordinate automorphism which takes any given linear ideal to a coordinate one. (eg. )
 
-linearBlowupChart = method();
-linearBlowupChart(Ideal, ZZ) := (J, m) -> (
-	if isLinear(J) == false then (
-		error "Expected linear ideal";
+linearBlowupVariables = method();
+linearBlowupVariables(Ring, ZZ, ZZ, ZZ) := (R, r, n, m) -> (
+	L := {};
+	chartRing := R[w_1..w_r];
+	for i from 1 to (n - m) do (
+		L = append(L, w_(n - i)*w_(n - m + 1))
 	);
-	"TBC" 
+	L = append(L, w_(n - m + 1));
+	for j from (n - m + 2) to n do (
+		L = append(L, w_(n - m + 1)*w_(n - j + 1))
+	);
+	for k from (n + 1) to r do (
+		L = append(L, w_k);
+	);
+	{chartRing, L}
 );
 
--- The intention here is to output actual charts: regular isomorphism from an affine space. As such, this is reserved for blowing up linear ideals of affine space. This will hopefully have the benefit of being iterative, and more appropriate for taking strict tranforms.  
+-- This is an auxiliary function encoding the change of variables in the following function. R is the base field (or ring), r is the dimension of the affine space you're blowing up, n is the number of generators of the linear monomial ideal which will be the center of the blowup, and m is the chart. 
 
+-- TODO: Add errors to make sure 1 <= m <= n, and that n <= r. 
+
+linearBlowupChart = method();
+linearBlowupChart(Ring, ZZ, ZZ, ZZ) := (R, r, n, m) -> (
+	A := R[k_1..k_r];
+	masterList := linearBlowupVariables(R, r, n, m);
+	chartRing := masterList#0;
+	linearBeans := masterList#1;
+	phi := map(chartRing, A, linearBeans);
+	phi
+);
+
+linearBlowupChart(PolynomialRing, ZZ, ZZ) := (A, n, m) -> (
+	r = #(gens A);
+	R = coefficientRing(A);
+	masterList := linearBlowupVariables(R, r, n, m);
+	chartRing := masterList#0;
+	linearBeans := masterList#1;
+	phi := map(chartRing, A, linearBeans);
+	phi
+);
+
+
+-- This allows you to change variables from the affine space you're blowing up to the affine space over R resulting from the m'th chart. 
 
 strictTransform = method();
 
@@ -65,7 +98,17 @@ strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
 	primaryDecomposition(chartMap(I))	
 );
 
--- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. 
+strictTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
+	A := ring(I);
+	phi := linearBlowupChart(A, n, m);
+	primaryDecomposition(phi(I))
+);
+
+-- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. (Note: this may have more than two elements if I is not irreducible.)
+
+-- The first is the rougher version which works for general rings. The second is strictly for blowup up linear monomial ideals of polynomial rings. However, it outputs an ideal of a polynomial ring, so it is better behaved. 
+
+
 
 -- TODO: Find a way to make the generators less redundant. 
 
