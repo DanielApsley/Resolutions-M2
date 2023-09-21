@@ -1,9 +1,42 @@
+variableChange = method();
+variableChange(PolynomialRing, Symbol) := (R, t) -> (
+	oldVars := flatten entries vars R;
+	n := #(oldVars);
+	coeffRing := coefficientRing(R);
+	freshRing := coeffRing[t_1..t_n];
+	phi := map(freshRing, R, vars freshRing);
+	phi
+);
+
+variableChange(PolynomialRing) := R -> (
+	variableChange(R, t)
+);
+
+variableChange(QuotientRing, Symbol) := (R, t) -> (
+	oldVars := flatten entries vars R;
+	n := #oldVars;
+	coeffRing := coefficientRing(R);
+	freshPolyRing := coeffRing[t_1..t_n];
+	psi := map(R, freshPolyRing, oldVars);
+	freshIdeal = ker psi;
+	freshRing := freshPolyRing/freshIdeal;
+	phi := map(freshRing, R, vars freshRing);
+	phi
+)
+
+
+variableChange(Ideal, Symbol) := (I, t) -> (
+	R := ring(I);
+	phi = variableChange(R, t);
+	phi(I)
+);
+
 affineCharts = method();
 affineCharts(Ideal, ZZ) := (J, m) -> (
-	A := ring(J);
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
+	A := ring(J);
 	B := ring(a);
-	structureB = map(B, A, {});
+	StructureB = map(B, A, {});
 	n := #gens B;
 
 	if (m < 1) or (m > n) then (
@@ -23,13 +56,11 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 
 affineCharts(Ideal) := idealdude -> (
 	listofCharts := {};
-	for i from 1 to (#gens idealdude) do (
+	for i from 1 to (#(flatten entries gens idealdude)) do (
 		 listofCharts = append(listofCharts, affineCharts(idealdude, i))
 	);
 	listofCharts
 );
-
--- TODO: Fix variable issues so the above runs.
 
 isLinear = method();
 isLinear(Ideal) := J -> (
@@ -102,6 +133,18 @@ strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
 	primaryDecomposition(chartMap(I))	
 );
 
+strictTransform(Ideal, Ideal) := (I, J) -> (
+	n := #(flatten entries gens J);
+	L := {};
+	for i from 1 to n do (
+		littleL := strictTransform(I,J,i);
+		L = append(L, littleL);
+	);
+	L
+);
+
+-- TODO: Add option to leave out the exceptional ideals, and add an option to change variables. 
+
 strictTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
 	A := ring(I);
 	if instance(A, PolynomialRing) == false then (
@@ -110,6 +153,17 @@ strictTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
 	phi := linearBlowupChart(A, n, m);
 	primaryDecomposition(phi(I))
 );
+
+strictTransform(Ideal, ZZ) := (I, n) -> (
+	L := {};
+	for i from 1 to n do (
+		littleL := strictTransform(I,n,i);
+		L = append(L, littleL);
+	);
+	L
+);
+
+-- TODO: see above.
 
 -- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. (Note: this may have more than two elements if I is not irreducible.)
 
@@ -122,4 +176,6 @@ I = ideal(x^3 - x^2 + y^2);
  -- I defines a nodal cubic resolved by one blow-up at the origin. The following two commands are doing the same calculation: looking at the ideal of the strict transform of I in the first chart. However, the second recognises the chart as living in a polynomial ring rather than a quotient ring (which we know to be isomorphic to a polynomial ring).
 
 -- strictTransform(I, J, 1)
--- strictTransform(I, 2, 1) 
+-- strictTransform(I, 2, 1)
+
+
