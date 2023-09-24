@@ -93,7 +93,7 @@ linearBlowupVariables(Ring, ZZ, ZZ, ZZ) := (R, r, n, m) -> (
 	);
 	L = append(L, w_(n - m + 1));
 	for j from (n - m + 2) to n do (
-		L = append(L, w_(n - m + 1)*w_(n - j + 1))
+		L = append(L, w_(n - m + 2)*w_(n - j + 1))
 	);
 	for k from (n + 1) to r do (
 		L = append(L, w_k);
@@ -210,6 +210,8 @@ isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 );
 
 -- Checks if the locus defined by I is resolved by a single blowup (x_1, .., x_n). Example below. 
+
+-- TODO: Add option functionality to see if the total transform has SNC support. 
 
 T = QQ[x,y,z];
 I = ideal(x^2*z - y^2); -- whitney umbrella
