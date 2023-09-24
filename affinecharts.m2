@@ -22,7 +22,7 @@ variableChange(QuotientRing, Symbol) := (R, t) -> (
 	freshRing := freshPolyRing/freshIdeal;
 	phi := map(freshRing, R, vars freshRing);
 	phi
-)
+);
 
 
 variableChange(Ideal, Symbol) := (I, t) -> (
@@ -126,56 +126,94 @@ linearBlowupChart(PolynomialRing, ZZ, ZZ) := (A, n, m) -> (
 
 -- This allows you to change variables from the affine space you're blowing up to the affine space over R resulting from the m'th chart. 
 
-strictTransform = method();
+strictTransform = method(Options => {Exceptional => false});
 
-strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
+strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
 	chartMap := affineCharts(J, m);
-	primaryDecomposition(chartMap(I))	
+	idealList := primaryDecomposition(chartMap(I));
+    if (opts#Exceptional === true) then (
+        return idealList;
+    );
+    if (opts#Exceptional === false) then (
+        if (#idealList > 2) then (
+            error "Expected irreducible ideal.";
+        );
+        return idealList#1;
+    );
 );
 
-strictTransform(Ideal, Ideal) := (I, J) -> (
+
+strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
 	n := #(flatten entries gens J);
 	L := {};
 	for i from 1 to n do (
-		littleL := strictTransform(I,J,i);
+		littleL := strictTransform(I,J,i,opts);
 		L = append(L, littleL);
 	);
 	L
 );
 
--- TODO: Add option to leave out the exceptional ideals, and add an option to change variables. 
 
-strictTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
+strictTransform(Ideal, ZZ, ZZ) := opts -> (I, n, m) -> (
+
 	A := ring(I);
 	if instance(A, PolynomialRing) == false then (
 		error "Expected polynomial ring."
 	);
 	phi := linearBlowupChart(A, n, m);
-	primaryDecomposition(phi(I))
+	idealList := primaryDecomposition(phi(I));
+    if (opts#Exceptional === true) then (
+        return idealList;
+    );
+    if (opts#Exceptional === false) then (
+        newidealList := drop(idealList, 1);
+        a := newidealList#-1; 
+        for b in drop(newidealList, -1) do (
+            a = b * a;
+        );
+        return a;
+    );
 );
 
-strictTransform(Ideal, ZZ) := (I, n) -> (
+strictTransform(Ideal, ZZ) := opts -> (I, n) -> (
 	L := {};
 	for i from 1 to n do (
-		littleL := strictTransform(I,n,i);
+		littleL := strictTransform(I,n,i,opts);
 		L = append(L, littleL);
 	);
 	L
 );
 
--- TODO: see above.
-
 -- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. (Note: this may have more than two elements if I is not irreducible.)
 
 -- To use the second version of this function (the better way), take an ideal I of the polynomial ring you want to blow up. Then, n input makes it blow up along the ideal (x_1, x_2, ..., x_n), and m denotes the chart you're looking in. (ie, the m'th standard chart in Proj(Rees Algebra))  
 
-T = QQ[x,y];
-J = ideal(x,y);
-I = ideal(x^3 - x^2 + y^2);
+-- T = QQ[x,y];
+-- J = ideal(x,y);
+-- I = ideal(x^3 - x^2 + y^2);
 
  -- I defines a nodal cubic resolved by one blow-up at the origin. The following two commands are doing the same calculation: looking at the ideal of the strict transform of I in the first chart. However, the second recognises the chart as living in a polynomial ring rather than a quotient ring (which we know to be isomorphic to a polynomial ring).
 
 -- strictTransform(I, J, 1)
 -- strictTransform(I, 2, 1)
 
+isResolved = method(Options => {Exceptional => false});
+
+isResolved(Ideal, ZZ) := opts -> (I, n) -> (
+    numsmoothcharts := 0;
+    for a in strictTransform(I, n) do (
+        if singularLocus(a) == 0 then (
+            numsmoothcharts = numsmoothcharts + 1;
+        );
+    );
+    numsmoothcharts == n
+);
+
+-- Checks if the locus defined by I is resolved by a single blowup (x_1, .., x_n). Example below. 
+
+T = QQ[x,y,z];
+I = ideal(x^2*z - y^2); -- whitney umbrella
+
+-- isResolved(I, 3)
+-- isResolved(I, 2)
 
