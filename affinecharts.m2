@@ -126,11 +126,50 @@ linearBlowupChart(PolynomialRing, ZZ, ZZ) := (A, n, m) -> (
 
 -- This allows you to change variables from the affine space you're blowing up to the affine space over R resulting from the m'th chart. 
 
+totalTransform = method();
+
+totalTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
+	chartMap := affineCharts(J, m);
+	chartMap(I)
+);
+
+totalTransform(Ideal, Ideal) := (I, J) -> (
+	n := #(flatten entries gens J);
+	outputlist := {};
+	for i from 1 to n do (
+		outputlist = append(outputlist, totalTransform(I, J, i));
+	);
+	outputlist
+);
+
+-- TODO: Make this less useless somehow, or remove it.
+
+totalTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
+	A := ring(I);
+	if instance(A, PolynomialRing) == false then (
+		error "Expected polynomial ring."
+	);
+	phi := linearBlowupChart(A, n, m);
+    phi(I)
+);
+
+totalTransform(Ideal, ZZ) := (I, n) ->  (
+    outputlist := {};
+	for i from 1 to n do (
+		outputlist = append(outputlist, totalTransform(I, n, i));
+	);
+	outputlist
+
+);
+
+-- This finds the inverse image ideal. If X' -> X is the blowup, and a is an ideal of X this finds the local descrition of a*O_{X'}.
+
+-- This is useful as an auxiliary function and also to compute log resolutions of ideal sheaves.    
+
 strictTransform = method(Options => {Exceptional => false});
 
 strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	chartMap := affineCharts(J, m);
-	idealList := primaryDecomposition(chartMap(I));
+	idealList := primaryDecomposition(totalTransform(I, J, m));
     if (opts#Exceptional === true) then (
         return idealList;
     );
@@ -155,13 +194,7 @@ strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
 
 
 strictTransform(Ideal, ZZ, ZZ) := opts -> (I, n, m) -> (
-
-	A := ring(I);
-	if instance(A, PolynomialRing) == false then (
-		error "Expected polynomial ring."
-	);
-	phi := linearBlowupChart(A, n, m);
-	idealList := primaryDecomposition(phi(I));
+	idealList := primaryDecomposition(totalTransform(I, n, m));
     if (opts#Exceptional === true) then (
         return idealList;
     );
@@ -218,4 +251,7 @@ I = ideal(x^2*z - y^2); -- whitney umbrella
 
 -- isResolved(I, 3)
 -- isResolved(I, 2)
+
+
+
 
