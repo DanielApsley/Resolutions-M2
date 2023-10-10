@@ -3,7 +3,7 @@ Some stuff to compute blowups in Macaulay2. It gives a presentation for general 
 
 So far it can only handle one blowup at a time. Eventually I'd like to be able to perform blowups iteratively and to automate the embedded resolution of plane curves. It would be especially nice to keep track of exceptional curves, and to output a dual graph of a given curve singularity.
 
-Next, we would like to implement log resolutions of curves and ideals in surfaces, and to output certain measures of singularities (like discrepencies). 
+Next, we would like to implement log resolutions of curves and ideals in surfaces, and to output certain measures of singularities (like multiplier ideals). 
 
-It would also be nice to implement other kinds of blowups and more general resolutions (ie. toric resolutions of toric varieties.).
+It would also be nice to implement other kinds of blowups and more general resolutions.
 
