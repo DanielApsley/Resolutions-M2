@@ -90,7 +90,7 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 	phi := map(AffineRing, B, coolBeans);
 	quotient := AffineRing/phi(a);
 	projection := map(quotient, AffineRing, {});
-	projection * structureMap
+	prunedringMap(quotient)*projection * structureMap
 );
 
 -- This function finds the m'th affine chart of the blowup of J, as an A algebra. 
