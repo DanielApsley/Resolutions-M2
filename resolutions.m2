@@ -32,6 +32,46 @@ variableChange(Ideal, Symbol) := (I, t) -> (
 	phi(I)
 );
 
+-- Perhaps the function finding the 'pruning map' exists already. I couldn't find it so I made some. Excuse the bit of space.
+
+preImage = method();
+preImage(RingMap, Ideal) := (phi, I) -> (
+    projection := map(target(phi)/I, target(phi));
+    kernel (projection*phi) 
+);
+
+
+inverseMap = method();
+inverseMap(RingMap) := phi -> (
+    if kernel phi != ideal(substitute(0, source phi)) then (
+        error "The map is not invertible."
+    );
+    flatRing := (flattenRing(target phi))#0;
+    varlist := flatten entries vars flatRing;
+    images := {};
+    for x in varlist do (
+        J := preImage(phi, ideal(substitute(x, target phi)));
+        gensJ := flatten entries gens J;
+        images = append(images, gensJ#0);
+    );
+    map(source phi, target phi, images)
+);
+
+--TODO: add an error for when J is not principal. 
+
+prunedringMap = method();
+prunedringMap(QuotientRing) := R -> (
+    prunedRing := prune R; 
+    badvars := flatten entries vars prunedRing;
+    goodvars := {};
+    for x in badvars do (
+        goodvars = append(goodvars, substitute(x, R))
+    );
+    phi := map(R, prunedRing, goodvars);
+    inverseMap(phi)
+);
+
+
 affineCharts = method();
 affineCharts(Ideal, ZZ) := (J, m) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
@@ -247,11 +287,21 @@ isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 
 -- TODO: Add option functionality to see if the total transform has SNC support. 
 
-T = QQ[x,y,z];
-I = ideal(x^2*z - y^2); -- whitney umbrella
+-- T = QQ[x,y,z];
+-- I = ideal(x^2*z - y^2); -- whitney umbrella
 
 -- isResolved(I, 3)
 -- isResolved(I, 2)
+
+-- Testing the prune map function
+
+ R = QQ[x,y,z];
+ m = ideal(x,y,z);
+ testcharts = affineCharts(m);
+ f = testcharts#0;
+ Q = target f;
+-- prunedringMap(Q);
+
 
 
 segreMap = method();
