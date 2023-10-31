@@ -1,3 +1,4 @@
+
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
 	oldVars := flatten entries vars R;
@@ -253,5 +254,17 @@ I = ideal(x^2*z - y^2); -- whitney umbrella
 -- isResolved(I, 2)
 
 
+segreMap = method();
 
-
+segreMap(PolynomialRing, PolynomialRing) := (R, S) -> (
+    if (coefficientRing(R) =!= coefficientRing(S)) then (
+        error "Expected same coefficients."
+    );
+    n := #(flatten entries vars R);
+    m := #(flatten entries vars S);
+    r := (n + 1)*(m + 1) - 1;
+    bigBigraded := R ** S;
+    coeff := coefficientRing(R);
+    bigProj := coeff[a_0..a_r];
+    bigBigraded
+)
