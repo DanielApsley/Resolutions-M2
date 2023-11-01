@@ -103,19 +103,6 @@ affineCharts(Ideal) := idealdude -> (
 	listofCharts
 );
 
-isLinear = method();
-isLinear(Ideal) := J -> (
-	dummycounter = 0;
-	L := flatten entries (gens J);
-	for l in L do (
-		if degree(l) == {1} then (
-			dummycounter = dummycounter + 1
-		);
-	);
-	dummycounter == #L
-);
-
--- Tests if an ideal of a polynomial ring is cut out by linear equations. May need to take minimal generators of J. For now I only want to consider linear spaces cut out by coordinates.
 
 -- TODO: Find a function which gives a coordinate automorphism which takes any given linear ideal to a coordinate one. (eg. )
 
@@ -295,26 +282,13 @@ isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 
 -- Testing the prune map function
 
- R = QQ[x,y,z];
- m = ideal(x,y,z);
- testcharts = affineCharts(m);
- f = testcharts#0;
- Q = target f;
+-- R = QQ[x,y,z];
+-- m = ideal(x,y,z);
+-- testcharts = affineCharts(m);
+-- f = testcharts#0;
+-- Q = target f;
 -- prunedringMap(Q);
 
 
 
-segreMap = method();
 
-segreMap(PolynomialRing, PolynomialRing) := (R, S) -> (
-    if (coefficientRing(R) =!= coefficientRing(S)) then (
-        error "Expected same coefficients."
-    );
-    n := #(flatten entries vars R);
-    m := #(flatten entries vars S);
-    r := (n + 1)*(m + 1) - 1;
-    bigBigraded := R ** S;
-    coeff := coefficientRing(R);
-    bigProj := coeff[a_0..a_r];
-    bigBigraded
-)
