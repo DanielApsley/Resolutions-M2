@@ -72,8 +72,8 @@ prunedringMap(QuotientRing) := R -> (
 );
 
 
-affineCharts = method();
-affineCharts(Ideal, ZZ) := (J, m) -> (
+blowupCharts = method(Options => {Exceptional => true});
+blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	A := ring(J);
 	B := ring(a);
@@ -90,21 +90,25 @@ affineCharts(Ideal, ZZ) := (J, m) -> (
 	phi := map(AffineRing, B, coolBeans);
 	quotient := AffineRing/phi(a);
 	projection := map(quotient, AffineRing, {});
-	prunedringMap(quotient)*projection * structureMap
+	outputMap := prunedringMap(quotient)*projection * structureMap;
+    exceptionalIdeal := trim outputMap(J);
+    if opts#Exceptional === true then (
+        return {outputMap, exceptionalIdeal};
+    );
+    if opts#Exceptional === false then (
+        return outputMap;
+    );
 );
 
--- This function finds the m'th affine chart of the blowup of J, as an A algebra. 
+-- This function finds the m'th affine chart of the blowup of J, as an A algebra, and the ideal of the exceptional locus. The option allows to just give the chart or to include the exceptional locus.  
 
-affineCharts(Ideal) := idealdude -> (
+blowupCharts(Ideal) := opts -> idealdude -> (
 	listofCharts := {};
 	for i from 1 to (#(flatten entries gens idealdude)) do (
-		 listofCharts = append(listofCharts, affineCharts(idealdude, i))
+		listofCharts = append(listofCharts, blowupCharts(idealdude, i, opts))
 	);
 	listofCharts
 );
-
-
--- TODO: Find a function which gives a coordinate automorphism which takes any given linear ideal to a coordinate one. (eg. )
 
 linearBlowupVariables = method();
 linearBlowupVariables(Ring, ZZ, ZZ, ZZ) := (R, r, n, m) -> (
@@ -157,7 +161,7 @@ linearBlowupChart(PolynomialRing, ZZ, ZZ) := (A, n, m) -> (
 totalTransform = method();
 
 totalTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
-	chartMap := affineCharts(J, m);
+	chartMap := blowupCharts(J, m, Exceptional => false);
 	chartMap(I)
 );
 
@@ -170,7 +174,6 @@ totalTransform(Ideal, Ideal) := (I, J) -> (
 	outputlist
 );
 
--- TODO: Make this less useless somehow, or remove it.
 
 totalTransform(Ideal, ZZ, ZZ) := (I, n, m) -> (
 	A := ring(I);
@@ -208,6 +211,8 @@ strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
         return idealList#1;
     );
 );
+
+--TODO: Update this to be accurate, taking into account the fact that blowupCharts now tracks exceptional divisors. 
 
 
 strictTransform(Ideal, Ideal) := opts -> (I, J) -> (

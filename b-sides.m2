@@ -29,3 +29,5 @@ segreMap(PolynomialRing, PolynomialRing) := (R, S) -> (
     bigBigraded
 )
 -- segreMap is a work in progress. To compute global blowups. 
+
+
