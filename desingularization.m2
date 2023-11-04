@@ -106,9 +106,10 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	if (m < 1) or (m > n) then (
 		error "chart number out of range";
 	);
-
+    local u;
 	AffineRing := A[u_1..u_(n - 1)];
 	structureMap := map(AffineRing, A, {});
+
 	coolBeans := flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
 	phi := map(AffineRing, B, coolBeans);
 	quotient := AffineRing/phi(a);
