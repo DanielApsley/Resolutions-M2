@@ -8,7 +8,7 @@ newPackage(
     {Name => "Joseph Sullivan", Email => "u1474923@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
     Headline => "Resolving Singularities in Macaulay2",
     Keywords => {"Algebraic Geometry"},
-    PackageImports => { "ReesAlgebra", "Divisor" },
+    PackageImports => { "ReesAlgebra", "Divisor", "PrimaryDecomposition" },
     DebuggingMode => true,
     Reload=>true
     );
@@ -20,7 +20,8 @@ export {"variableChange",
 "blowupCharts",
 "totalTransform",
 "strictTransform",
-"isResolved"
+"isResolved",
+"Exceptional"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
@@ -35,17 +36,13 @@ variableChange(PolynomialRing, Symbol) := (R, t) -> (
 	phi
 );
 
-variableChange(PolynomialRing) := R -> (
-	variableChange(R, t)
-);
-
 variableChange(QuotientRing, Symbol) := (R, t) -> (
 	oldVars := flatten entries vars R;
 	n := #oldVars;
 	coeffRing := coefficientRing(R);
 	freshPolyRing := coeffRing[t_1..t_n];
 	psi := map(R, freshPolyRing, oldVars);
-	freshIdeal = ker psi;
+	freshIdeal := ker psi;
 	freshRing := freshPolyRing/freshIdeal;
 	phi := map(freshRing, R, vars freshRing);
 	phi
@@ -54,7 +51,7 @@ variableChange(QuotientRing, Symbol) := (R, t) -> (
 
 variableChange(Ideal, Symbol) := (I, t) -> (
 	R := ring(I);
-	phi = variableChange(R, t);
+	phi := variableChange(R, t);
 	phi(I)
 );
 
@@ -103,7 +100,7 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	A := ring(J);
 	B := ring(a);
-	StructureB = map(B, A, {});
+	StructureB := map(B, A, {});
 	n := #gens B;
 
 	if (m < 1) or (m > n) then (
@@ -126,7 +123,7 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
     );
 );
 
--- This function finds the m'th affine chart of the blowup of J, as an A algebra, and the ideal of the exceptional locus. The option allows to just give the chart or to include the exceptional locus.  
+-- TODO: Make the u in the above definition local, so that the package loads without error. 
 
 blowupCharts(Ideal) := opts -> idealdude -> (
 	listofCharts := {};
@@ -151,9 +148,6 @@ totalTransform(Ideal, Ideal) := (I, J) -> (
 	);
 	outputlist
 );
-
-
--- This finds the inverse image ideal. If X' -> X is the blowup, and a is an ideal of X this finds the local descrition of a*O_{X'}.
 
 strictTransform = method(Options => {Exceptional => false});
 
@@ -183,7 +177,6 @@ strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
 	L
 );
 
--- Finds the strict transform of I in the m'th chart of the blowup of J. As it is now, it outputs a list. The first element is the exceptional locus, so to get the strict tranform in the usual sense, you look at the second ideal. (Note: this may have more than two elements if I is not irreducible.)
 
 isResolved = method(Options => {Exceptional => false});
 
@@ -197,20 +190,96 @@ beginDocumentation()
 
 doc ///
     Key 
-
+        prunedringMap
+        (prunedringMap, QuotientRing)
     Headline
-
+        the pruning isomorphism. 
     Usage
-
+        prunedringMap(R)
     Inputs
-
+        R: QuotientRing
     Outputs
-   
+        : RingMap
     Description
-
+        Text
+         Outputs the isomorphism between a quotient ring and its pruning.  
     SeeAlso
 
 ///
+
+doc ///
+    Key 
+        blowupCharts
+        (blowupCharts, Ideal, ZZ)
+        (blowupCharts, Ideal)
+        [blowupCharts, Exceptional]
+    Headline
+        Blowing up ideals of affine varieties. 
+    Usage
+        blowupChart(J, n, Exceptional => b)
+        blowupChart(J)
+    Inputs
+        J: Ideal
+        n: ZZ
+        b: Boolean
+    Outputs
+        : List
+        : List
+    Description
+        Text
+         Finds the charts and exceptional divisors of the blowup of an affine scheme along an ideal. Outputs the n'th chart of the blowup of ring(J) along J. It will output a list of ring maps, together with ideals of the target which define the exceptional locus 
+    SeeAlso
+
+///
+
+doc ///
+    Key 
+        totalTransform
+        (totalTransform, Ideal, Ideal, ZZ)
+        (totalTransform, Ideal, Ideal)
+    Headline
+        Transporting ideals along blowups.
+    Usage
+        totalTransform(I, J, n)
+        totalTransform(I, J)
+    Inputs
+        I: Ideal
+        J: Ideal
+        n: ZZ
+    Outputs
+        : Ideal
+        : List
+    Description
+        Text
+         Computes the total transform of an ideal. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'.
+    SeeAlso
+        strictTransform
+///
+
+doc ///
+    Key 
+        strictTransform
+        (strictTransform, Ideal, Ideal, ZZ)
+        (strictTransform, Ideal, Ideal)
+    Headline
+        The non-exceptional part of the total transform. 
+    Usage
+        strictTransform(I, J, n)
+        strictTransform(I, J)
+    Inputs
+        I: Ideal
+        J: Ideal
+        n: ZZ
+    Outputs
+        : Ideal
+        : List
+    Description
+        Text
+         Computes the strict transform of an ideal. That is, it factors the exceptional part out of the total transform.
+    SeeAlso
+        strictTransform
+///
+
 
 TEST ///
    
