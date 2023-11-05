@@ -3,7 +3,7 @@ newPackage(
     Version => "0.01",
     Date => "October 41, 2029",
     Authors => {
-	{Name => "Daniel Apsley", Email => "apsley@math.utah.edu", HomePage => "https://faculty.utah.edu/u1421441-DANIEL_JONATHAN_APSLEY/research/index.hml"}, 
+	{Name => "Daniel Apsley", Email => "apsley@math.utah.edu", HomePage => "https://www.math.utah.edu/~apsley/"}, 
     {Name => "Emelie Arvidsson", Email => "u6041982@utah.edu", HomePage => "https://www.emeliearvidsson.com/"},
     {Name => "Joseph Sullivan", Email => "u1474923@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
     Headline => "Resolving Singularities in Macaulay2",
@@ -127,8 +127,6 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
         return outputMap;
     );
 );
-
--- TODO: Make the u in the above definition local, so that the package loads without error. 
 
 blowupCharts(Ideal) := opts -> idealdude -> (
 	listofCharts := {};
@@ -329,4 +327,9 @@ end--
 -- f = testcharts#0;
 -- Q = target f;
 -- prunedringMap(Q);
+
+-- TODO: Add the following tests
+
+-- Check the strict transform of reducible ideals like x*y + y^3. Better yet if the singular locus is not the origin. 
+
 
