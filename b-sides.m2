@@ -1,4 +1,4 @@
--- A collection of functions and code which may be useful, but is not currently used in resolutions.m2. 
+-- A collection of functions and code which may be useful, but is not currently used in the package. 
 
 isLinear = method();
 isLinear(Ideal) := J -> (
