@@ -13,7 +13,9 @@ newPackage(
     Reload=>true
     );
 
-export {"variableChange", 
+export {
+-- Methods
+"variableChange", 
 "preImage",
 "inverseMap", 
 "prunedringMap", 
@@ -21,7 +23,9 @@ export {"variableChange",
 "totalTransform",
 "strictTransform",
 "isResolved",
-"Exceptional"
+-- Options
+"Exceptional",
+"Divisorial"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
@@ -134,25 +138,30 @@ blowupCharts(Ideal) := opts -> idealdude -> (
 	listofCharts
 );
 
-totalTransform = method();
+totalTransform = method(Options => {Divisorial => false});
 
-totalTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
+totalTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
 	chartMap := blowupCharts(J, m, Exceptional => false);
-	chartMap(I)
+    if opts#Divisorial === false then (
+        return chartMap(I);
+    );
+	if opts#Divisorial === true then (
+        return divisor(chartMap(I));
+    );
 );
 
-totalTransform(Ideal, Ideal) := (I, J) -> (
+totalTransform(Ideal, Ideal) := opts -> (I, J) -> (
 	n := #(flatten entries gens J);
 	outputlist := {};
 	for i from 1 to n do (
-		outputlist = append(outputlist, totalTransform(I, J, i));
+		outputlist = append(outputlist, totalTransform(I, J, i, opts));
 	);
 	outputlist
 );
 
-strictTransform = method();
+strictTransform = method(Options => {Divisorial => false});
 
-strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
+strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
 	idealList := primaryDecomposition(totalTransform(I, J, m));
     R := ring(idealList#0);
     exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
@@ -165,14 +174,19 @@ strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
     for a in idealList do (
         outputIdeal = a*outputIdeal;
     );
-    outputIdeal
+    if opts#Divisorial === false then (
+        return outputIdeal
+    );
+    if opts#Divisorial === true then (
+        return divisor(outputIdeal)
+    );
    );
 
-strictTransform(Ideal, Ideal) := (I, J) -> (
+strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
 	n := #(flatten entries gens J);
 	L := {};
 	for i from 1 to n do (
-		littleL := strictTransform(I,J,i);
+		littleL := strictTransform(I,J,i, opts);
 		L = append(L, littleL);
 	);
 	L
@@ -238,21 +252,23 @@ doc ///
         totalTransform
         (totalTransform, Ideal, Ideal, ZZ)
         (totalTransform, Ideal, Ideal)
+        [totalTransform, Divisorial]
     Headline
         Transporting ideals along blowups.
     Usage
-        totalTransform(I, J, n)
-        totalTransform(I, J)
+        totalTransform(I, J, n, Divisorial => b)
+        totalTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
         J: Ideal
         n: ZZ
+        b: Boolean
     Outputs
         : Ideal
         : List
     Description
         Text
-         Computes the total transform of an ideal. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'.
+         Computes the total transform of I in the blowup along J. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'. If Divisiorial is set to true, this outputs the associated divisor (resp. list of divisors).
     SeeAlso
         strictTransform
 ///
@@ -262,23 +278,25 @@ doc ///
         strictTransform
         (strictTransform, Ideal, Ideal, ZZ)
         (strictTransform, Ideal, Ideal)
+        [strictTransform, Divisorial]
     Headline
         The non-exceptional part of the total transform. 
     Usage
-        strictTransform(I, J, n)
-        strictTransform(I, J)
+        strictTransform(I, J, n, Divisorial => b)
+        strictTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
         J: Ideal
         n: ZZ
+        b: Boolean
     Outputs
         : Ideal
         : List
     Description
         Text
-         Computes the strict transform of an ideal. That is, it factors the exceptional part out of the total transform.
+         Computes the strict transform of I in the blowup along J. That is, it factors the exceptional part out of the total transform. The option determines whether to output an ideal or the associated divisor. 
     SeeAlso
-        strictTransform
+        totalTransform
 ///
 
 
