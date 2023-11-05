@@ -106,7 +106,7 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	if (m < 1) or (m > n) then (
 		error "chart number out of range";
 	);
-    local u;
+    u := local u;
 	AffineRing := A[u_1..u_(n - 1)];
 	structureMap := map(AffineRing, A, {});
 
@@ -150,29 +150,29 @@ totalTransform(Ideal, Ideal) := (I, J) -> (
 	outputlist
 );
 
-strictTransform = method(Options => {Exceptional => false});
+strictTransform = method();
 
-strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
+strictTransform(Ideal, Ideal, ZZ) := (I, J, m) -> (
 	idealList := primaryDecomposition(totalTransform(I, J, m));
-    if (opts#Exceptional === true) then (
-        return idealList;
-    );
-    if (opts#Exceptional === false) then (
-        if (#idealList > 2) then (
-            error "Expected irreducible ideal.";
+    R := ring(idealList#0);
+    exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
+    for a in idealList do (
+        if radical(a) == sub(exceptionalLocus, R) then (
+            idealList = delete(a, idealList);
         );
-        return idealList#1;
     );
-);
+    outputIdeal := ideal(substitute(1, R));
+    for a in idealList do (
+        outputIdeal = a*outputIdeal;
+    );
+    outputIdeal
+   );
 
---TODO: Update this to be accurate, taking into account the fact that blowupCharts now tracks exceptional divisors. 
-
-
-strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
+strictTransform(Ideal, Ideal) := (I, J) -> (
 	n := #(flatten entries gens J);
 	L := {};
 	for i from 1 to n do (
-		littleL := strictTransform(I,J,i,opts);
+		littleL := strictTransform(I,J,i);
 		L = append(L, littleL);
 	);
 	L
