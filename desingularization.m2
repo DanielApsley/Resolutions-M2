@@ -4,7 +4,7 @@ newPackage(
     Date => "October 41, 2029",
     Authors => {
 	{Name => "Daniel Apsley", Email => "apsley@math.utah.edu", HomePage => "https://www.math.utah.edu/~apsley/"}, 
-    {Name => "Emelie Arvidsson", Email => "u6041982@utah.edu", HomePage => "https://www.emeliearvidsson.com/"},
+    {Name => "Emelie Arvidsson", Email => "arvidsson@utah.edu", HomePage => "https://www.emeliearvidsson.com/"},
     {Name => "Joseph Sullivan", Email => "jsullivan@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
     Headline => "Resolving Singularities in Macaulay2",
     Keywords => {"Algebraic Geometry"},
