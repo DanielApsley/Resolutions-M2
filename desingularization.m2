@@ -5,7 +5,7 @@ newPackage(
     Authors => {
 	{Name => "Daniel Apsley", Email => "apsley@math.utah.edu", HomePage => "https://www.math.utah.edu/~apsley/"}, 
     {Name => "Emelie Arvidsson", Email => "u6041982@utah.edu", HomePage => "https://www.emeliearvidsson.com/"},
-    {Name => "Joseph Sullivan", Email => "u1474923@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
+    {Name => "Joseph Sullivan", Email => "jsullivan@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
     Headline => "Resolving Singularities in Macaulay2",
     Keywords => {"Algebraic Geometry"},
     PackageImports => { "ReesAlgebra", "Divisor", "PrimaryDecomposition" },
@@ -28,8 +28,6 @@ export {
 "Exceptional",
 "Divisorial"
 };
-
-needsPackage "Divisor";
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
 
