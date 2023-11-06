@@ -23,10 +23,13 @@ export {
 "totalTransform",
 "strictTransform",
 "isResolved",
+"isSmoothSurface",
 -- Options
 "Exceptional",
 "Divisorial"
 };
+
+needsPackage "Divisor";
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
 
@@ -190,6 +193,16 @@ strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
 	L
 );
 
+
+isSmoothSurface = method();
+isSmoothSurface(Ring, Ideal) := (R,I) -> (
+    d := divisor(I);
+    isSNC(d)
+);
+
+isSmoothSurface(Ring, WeilDivisor) := (R,d) -> (
+    isSNC(d)
+)
 
 isResolved = method(Options => {Exceptional => false});
 
