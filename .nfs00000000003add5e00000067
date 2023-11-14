@@ -24,15 +24,9 @@ export {
 "strictTransform",
 "isResolved",
 "isSmoothSurface",
-"desingStep",
 -- Options
 "Exceptional",
-"Divisorial",
--- Types and Terms
-"DesingularizationStep",
-"Charts",
-"StepNumber",
-"IntersectionMatrix"
+"Divisorial"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
@@ -218,7 +212,7 @@ isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
-desingStep(Ring) := R -> (
+desingStep(QuotientRing) := R -> (
 	new DesingularizationStep from {Charts => {map(R, R, {})}, IntersectionMatrix => matrix({0}), StepNumber => 0}
 );
 beginDocumentation()
