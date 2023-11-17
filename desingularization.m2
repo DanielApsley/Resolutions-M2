@@ -107,7 +107,8 @@ prunedringMap(QuotientRing) := R -> (
 
 
 blowupCharts = method(Options => {Exceptional => true});
-blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
+
+blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	A := ring(J);
 	B := ring(a);
@@ -125,7 +126,8 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	phi := map(AffineRing, B, coolBeans);
 	quotient := AffineRing/phi(a);
 	projection := map(quotient, AffineRing, {});
-	outputMap := prunedringMap(quotient)*projection * structureMap;
+	preoutputMap := prunedringMap(quotient)*projection * structureMap;
+    outputMap := variableChange(target(preoutputMap), s) * preoutputMap;
     exceptionalIdeal := trim outputMap(J);
     if opts#Exceptional === true then (
         return {outputMap, exceptionalIdeal};
@@ -135,13 +137,25 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
     );
 );
 
-blowupCharts(Ideal) := opts -> idealdude -> (
+
+blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
+    u := local u;
+    return blowupCharts(J, m, u);
+);
+
+blowupCharts(Ideal, Symbol) := opts -> (I, s) -> (
 	listofCharts := {};
-	for i from 1 to (#(flatten entries gens idealdude)) do (
-		listofCharts = append(listofCharts, blowupCharts(idealdude, i, opts))
+	for i from 1 to (#(flatten entries gens I)) do (
+		listofCharts = append(listofCharts, blowupCharts(I, i,s, opts))
 	);
 	listofCharts
 );
+
+blowupCharts(Ideal) := opts -> I -> (
+    u := local u;
+    blowupCharts(I, u)
+);
+
 
 totalTransform = method(Options => {Divisorial => false});
 
@@ -222,6 +236,39 @@ desingStep(Ring) := R -> (
 	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0}
 );
 beginDocumentation()
+
+blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
+    newStepNumber := S#StepNumber + 1;
+    oldCharts := S#Charts;
+    oldTargets := {};
+    for f in oldCharts do (
+        oldTargets = append(oldTargets, target(f))
+    );
+    Jrings := 0;
+    Jringindex := -1;
+    for R in oldTargets do (
+        Jringindex = Jringindex + 1;
+        if ring(J) === R then (
+            Jrings = Jrings + 1;
+        );
+    );
+    if Jrings != 1 then (
+        error "expected ideal of the same ring"
+    );
+    
+    prenewvariable := concatenate{"T", toString(newStepNumber)};
+    newvariable := getSymbol prenewvariable;
+    newblowupcharts := blowupCharts(J, newvariable, Exceptional => false);
+
+    chartstoappend := {};
+    for f in newblowupcharts do (
+        chartstoappend = append(chartstoappend, f*(oldCharts#Jringindex));
+    );
+
+    L := drop(oldCharts, {Jringindex, Jringindex});
+    newcharts := flatten insert(Jringindex, chartstoappend, L);
+    new DesingularizationStep from {Charts => newcharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber}
+);
 
 doc ///
     Key 
