@@ -301,6 +301,32 @@ totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     outputList
 );
 
+strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
+    listofCharts := S#Charts;
+    exceptionalDivisors := S#Exceptionals;
+    numofCharts := #listofCharts;
+    preoutputList := {};
+    for i from 0 to (numofCharts - 1) do (
+        exceptionalLoci := exceptionalDivisors#i;
+        phi := listofCharts#i;
+        idealList := primaryDecomposition(phi(I));
+        R := ring(idealList#0);
+        for a in idealList do (
+            for E in exceptionalLoci do (
+                if radical(a) == sub(E, R) then (
+                    idealList = delete(a, idealList);
+                );
+            );
+        );
+        outputIdeal := ideal(sub(1, R));
+        for a in idealList do (
+            outputIdeal = a*outputIdeal;
+        );
+        preoutputList = append(preoutputList, outputIdeal);
+    );
+    preoutputList
+);
+
 
 doc ///
     Key 
