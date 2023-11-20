@@ -32,7 +32,8 @@ export {
 "DesingularizationStep",
 "Charts",
 "StepNumber",
-"IntersectionMatrix"
+"IntersectionMatrix",
+"Exceptionals"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
@@ -233,12 +234,13 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
 );
 beginDocumentation()
 
 blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newStepNumber := S#StepNumber + 1;
+    oldExceptionals := S#Exceptionals;
     oldCharts := S#Charts;
     oldTargets := {};
     for f in oldCharts do (
@@ -258,17 +260,47 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;
-    newblowupcharts := blowupCharts(J, newvariable, Exceptional => false);
+    newblowupcharts := blowupCharts(J, newvariable, Exceptional => true);
+    oldseq := (oldExceptionals)#Jringindex;
 
     chartstoappend := {};
-    for f in newblowupcharts do (
+    exceptionalstoappend := {};
+    for C in newblowupcharts do (
+        f := C#0;
+        freshseq := ();
+        for exIdeal in oldseq do (
+            freshseq = append(freshseq, f(exIdeal))
+        );
+        freshseq = append(freshseq, C#1);
         chartstoappend = append(chartstoappend, f*(oldCharts#Jringindex));
+        exceptionalstoappend = append(exceptionalstoappend, freshseq);
     );
 
     L := drop(oldCharts, {Jringindex, Jringindex});
-    newcharts := flatten insert(Jringindex, chartstoappend, L);
-    new DesingularizationStep from {Charts => newcharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber}
+    newcharts := flatten insert(Jringindex - 1, chartstoappend, L);
+
+    M := drop(oldExceptionals, {Jringindex, Jringindex});
+    newExceptionals := flatten insert(Jringindex - 1, exceptionalstoappend, M);
+
+    new DesingularizationStep from {Charts => newcharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
 );
+
+totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
+    listofCharts := S#Charts;
+    outputList := {};
+    if opts#Divisorial === false then (
+        for phi in listofCharts do (
+            outputList = append(outputList, phi(I))
+        );
+    );
+    if opts#Divisorial === true then (
+        for phi in listofCharts do (
+            outputList = append(outputList, divisor(phi(I)))
+        );
+    );
+    outputList
+);
+
 
 doc ///
     Key 
