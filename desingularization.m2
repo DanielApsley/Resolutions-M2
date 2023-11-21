@@ -38,6 +38,13 @@ export {
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
 
+DesingularizationStep = new Type of MutableHashTable;
+desingStep = method();
+
+desingStep(Ring) := R -> (
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
+);
+
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
 	oldVars := flatten entries vars R;
@@ -157,87 +164,6 @@ blowupCharts(Ideal) := opts -> I -> (
     blowupCharts(I, u)
 );
 
-
-totalTransform = method(Options => {Divisorial => false});
-
-totalTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	chartMap := blowupCharts(J, m, Exceptional => false);
-    if opts#Divisorial === false then (
-        return chartMap(I);
-    );
-	if opts#Divisorial === true then (
-        return divisor(chartMap(I));
-    );
-);
-
-totalTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	outputlist := {};
-	for i from 1 to n do (
-		outputlist = append(outputlist, totalTransform(I, J, i, opts));
-	);
-	outputlist
-);
-
-strictTransform = method(Options => {Divisorial => false});
-
-strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	idealList := primaryDecomposition(totalTransform(I, J, m));
-    R := ring(idealList#0);
-    exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
-    for a in idealList do (
-        if radical(a) == sub(exceptionalLocus, R) then (
-            idealList = delete(a, idealList);
-        );
-    );
-    outputIdeal := ideal(substitute(1, R));
-    for a in idealList do (
-        outputIdeal = a*outputIdeal;
-    );
-    if opts#Divisorial === false then (
-        return outputIdeal
-    );
-    if opts#Divisorial === true then (
-        return divisor(outputIdeal)
-    );
-   );
-
-strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	L := {};
-	for i from 1 to n do (
-		littleL := strictTransform(I,J,i, opts);
-		L = append(L, littleL);
-	);
-	L
-);
-
-
-isSmoothSurface = method();
-isSmoothSurface(Ring, Ideal) := (R,I) -> (
-    d := divisor(I);
-    isSNC(d)
-);
-
-isSmoothSurface(Ring, WeilDivisor) := (R,d) -> (
-    isSNC(d)
-)
-
-isResolved = method(Options => {Exceptional => false});
-
-isResolved(Ideal, ZZ) := opts -> (I, n) -> (
-
-);
-
--- TODO: make this function! 
-DesingularizationStep = new Type of MutableHashTable;
-desingStep = method();
-
-desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
-);
-beginDocumentation()
-
 blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newStepNumber := S#StepNumber + 1;
     oldExceptionals := S#Exceptionals;
@@ -296,6 +222,8 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
 );
 
+totalTransform = method(Options => {Divisorial => false});
+
 totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     listofCharts := S#Charts;
     outputList := {};
@@ -311,6 +239,27 @@ totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     );
     outputList
 );
+
+totalTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
+	chartMap := blowupCharts(J, m, Exceptional => false);
+    if opts#Divisorial === false then (
+        return chartMap(I);
+    );
+	if opts#Divisorial === true then (
+        return divisor(chartMap(I));
+    );
+);
+
+totalTransform(Ideal, Ideal) := opts -> (I, J) -> (
+	n := #(flatten entries gens J);
+	outputlist := {};
+	for i from 1 to n do (
+		outputlist = append(outputlist, totalTransform(I, J, i, opts));
+	);
+	outputlist
+);
+
+strictTransform = method(Options => {Divisorial => false});
 
 strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     listofCharts := S#Charts;
@@ -338,6 +287,57 @@ strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     preoutputList
 );
 
+strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
+	idealList := primaryDecomposition(totalTransform(I, J, m));
+    R := ring(idealList#0);
+    exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
+    for a in idealList do (
+        if radical(a) == sub(exceptionalLocus, R) then (
+            idealList = delete(a, idealList);
+        );
+    );
+    outputIdeal := ideal(substitute(1, R));
+    for a in idealList do (
+        outputIdeal = a*outputIdeal;
+    );
+    if opts#Divisorial === false then (
+        return outputIdeal
+    );
+    if opts#Divisorial === true then (
+        return divisor(outputIdeal)
+    );
+   );
+
+strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
+	n := #(flatten entries gens J);
+	L := {};
+	for i from 1 to n do (
+		littleL := strictTransform(I,J,i, opts);
+		L = append(L, littleL);
+	);
+	L
+);
+
+
+isSmoothSurface = method();
+isSmoothSurface(Ring, Ideal) := (R,I) -> (
+    d := divisor(I);
+    isSNC(d)
+);
+
+isSmoothSurface(Ring, WeilDivisor) := (R,d) -> (
+    isSNC(d)
+)
+
+isResolved = method(Options => {Exceptional => false});
+
+isResolved(Ideal, ZZ) := opts -> (I, n) -> (
+
+);
+
+-- TODO: make this function! 
+
+beginDocumentation()
 
 doc ///
     Key 
