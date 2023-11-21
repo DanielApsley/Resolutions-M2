@@ -265,24 +265,35 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
 
     chartstoappend := {};
     exceptionalstoappend := {};
+    Cindex := -1;
     for C in newblowupcharts do (
+        Cindex = Cindex + 1;
         f := C#0;
+        localExcideal := C#1;
         freshseq := ();
+        R := target(f);
         for exIdeal in oldseq do (
-            freshseq = append(freshseq, f(exIdeal))
+            idealList := primaryDecomposition(f(exIdeal));
+            for a in idealList do (
+                if a == localExcideal then (
+                    idealList = delete(a, idealList);
+                );
+            );
+            transformedExc := ideal(sub(1, R));
+            for a in idealList do (
+                transformedExc = a*transformedExc; 
+            );
+            freshseq = append(freshseq, transformedExc);
         );
         freshseq = append(freshseq, C#1);
         chartstoappend = append(chartstoappend, f*(oldCharts#Jringindex));
         exceptionalstoappend = append(exceptionalstoappend, freshseq);
     );
 
-    L := drop(oldCharts, {Jringindex, Jringindex});
-    newcharts := flatten insert(Jringindex - 1, chartstoappend, L);
+    newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
+    newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
 
-    M := drop(oldExceptionals, {Jringindex, Jringindex});
-    newExceptionals := flatten insert(Jringindex - 1, exceptionalstoappend, M);
-
-    new DesingularizationStep from {Charts => newcharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
 );
 
 totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
