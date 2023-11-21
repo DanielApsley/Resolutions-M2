@@ -240,23 +240,9 @@ totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     outputList
 );
 
-totalTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	chartMap := blowupCharts(J, m, Exceptional => false);
-    if opts#Divisorial === false then (
-        return chartMap(I);
-    );
-	if opts#Divisorial === true then (
-        return divisor(chartMap(I));
-    );
-);
-
 totalTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	outputlist := {};
-	for i from 1 to n do (
-		outputlist = append(outputlist, totalTransform(I, J, i, opts));
-	);
-	outputlist
+    S := blowupCharts(desingStep(ring(J)), J);
+    totalTransform(S, I)
 );
 
 strictTransform = method(Options => {Divisorial => false});
@@ -287,35 +273,9 @@ strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     preoutputList
 );
 
-strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	idealList := primaryDecomposition(totalTransform(I, J, m));
-    R := ring(idealList#0);
-    exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
-    for a in idealList do (
-        if radical(a) == sub(exceptionalLocus, R) then (
-            idealList = delete(a, idealList);
-        );
-    );
-    outputIdeal := ideal(substitute(1, R));
-    for a in idealList do (
-        outputIdeal = a*outputIdeal;
-    );
-    if opts#Divisorial === false then (
-        return outputIdeal
-    );
-    if opts#Divisorial === true then (
-        return divisor(outputIdeal)
-    );
-   );
-
 strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	L := {};
-	for i from 1 to n do (
-		littleL := strictTransform(I,J,i, opts);
-		L = append(L, littleL);
-	);
-	L
+    S := blowupCharts(desingStep(ring(J)), J);
+    strictTransform(S, I)
 );
 
 
@@ -386,13 +346,11 @@ doc ///
 doc ///
     Key 
         totalTransform
-        (totalTransform, Ideal, Ideal, ZZ)
         (totalTransform, Ideal, Ideal)
         [totalTransform, Divisorial]
     Headline
         Transporting ideals along blowups.
     Usage
-        totalTransform(I, J, n, Divisorial => b)
         totalTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
@@ -412,13 +370,11 @@ doc ///
 doc ///
     Key 
         strictTransform
-        (strictTransform, Ideal, Ideal, ZZ)
         (strictTransform, Ideal, Ideal)
         [strictTransform, Divisorial]
     Headline
         The non-exceptional part of the total transform. 
     Usage
-        strictTransform(I, J, n, Divisorial => b)
         strictTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
