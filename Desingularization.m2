@@ -88,7 +88,7 @@ inverseMap(RingMap) := phi -> (
 --TODO: add an error for when J is not principal. 
 
 prunedringMap = method();
-prunedringMap(QuotientRing) := R -> (
+prunedringMap(Ring) := R -> (
     prunedRing := prune R; 
     badvars := flatten entries vars prunedRing;
     goodvars := {};
@@ -215,13 +215,13 @@ beginDocumentation()
 doc ///
     Key 
         prunedringMap
-        (prunedringMap, QuotientRing)
+        (prunedringMap, Ring)
     Headline
         the pruning isomorphism. 
     Usage
         prunedringMap(R)
     Inputs
-        R: QuotientRing
+        R: Ring
     Outputs
         : RingMap
     Description
