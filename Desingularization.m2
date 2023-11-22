@@ -27,12 +27,26 @@ export {
 "strictTransform",
 "isResolved",
 "isSmoothSurface",
+"desingStep",
 -- Options
 "Exceptional",
-"Divisorial"
+"Divisorial",
+-- Types and Terms
+"DesingularizationStep",
+"Charts",
+"StepNumber",
+"IntersectionMatrix",
+"Exceptionals"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
+
+DesingularizationStep = new Type of MutableHashTable;
+desingStep = method();
+
+desingStep(Ring) := R -> (
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
+);
 
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
@@ -171,7 +185,8 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
 
 
 blowupCharts = method(Options => {Exceptional => true});
-blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
+
+blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	A := ring(J);
 	B := ring(a);
@@ -189,7 +204,8 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
 	phi := map(AffineRing, B, coolBeans);
 	quotient := AffineRing/phi(a);
 	projection := map(quotient, AffineRing, {});
-	outputMap := prunedringMap(quotient)*projection * structureMap;
+	preoutputMap := prunedringMap(quotient)*projection * structureMap;
+    outputMap := variableChange(target(preoutputMap), s) * preoutputMap;
     exceptionalIdeal := trim outputMap(J);
     if opts#Exceptional === true then (
         return {outputMap, exceptionalIdeal};
@@ -199,66 +215,137 @@ blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
     );
 );
 
-blowupCharts(Ideal) := opts -> idealdude -> (
+
+blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
+    u := local u;
+    return blowupCharts(J, m, u);
+);
+
+blowupCharts(Ideal, Symbol) := opts -> (I, s) -> (
 	listofCharts := {};
-	for i from 1 to (#(flatten entries gens idealdude)) do (
-		listofCharts = append(listofCharts, blowupCharts(idealdude, i, opts))
+	for i from 1 to (#(flatten entries gens I)) do (
+		listofCharts = append(listofCharts, blowupCharts(I, i,s, opts))
 	);
 	listofCharts
 );
 
+blowupCharts(Ideal) := opts -> I -> (
+    u := local u;
+    blowupCharts(I, u)
+);
+
+blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
+    newStepNumber := S#StepNumber + 1;
+    oldExceptionals := S#Exceptionals;
+    oldCharts := S#Charts;
+    oldTargets := {};
+    for f in oldCharts do (
+        oldTargets = append(oldTargets, target(f))
+    );
+    Jrings := 0;
+    Jringindex := -1;
+    for R in oldTargets do (
+        Jringindex = Jringindex + 1;
+        if ring(J) === R then (
+            Jrings = Jrings + 1;
+        );
+    );
+    if Jrings != 1 then (
+        error "expected ideal of the same ring"
+    );
+    
+    prenewvariable := concatenate{"T", toString(newStepNumber)};
+    newvariable := getSymbol prenewvariable;
+    newblowupcharts := blowupCharts(J, newvariable, Exceptional => true);
+    oldseq := (oldExceptionals)#Jringindex;
+
+    chartstoappend := {};
+    exceptionalstoappend := {};
+    Cindex := -1;
+    for C in newblowupcharts do (
+        Cindex = Cindex + 1;
+        f := C#0;
+        localExcideal := C#1;
+        freshseq := ();
+        R := target(f);
+        for exIdeal in oldseq do (
+            idealList := primaryDecomposition(f(exIdeal));
+            for a in idealList do (
+                if a == localExcideal then (
+                    idealList = delete(a, idealList);
+                );
+            );
+            transformedExc := ideal(sub(1, R));
+            for a in idealList do (
+                transformedExc = a*transformedExc; 
+            );
+            freshseq = append(freshseq, transformedExc);
+        );
+        freshseq = append(freshseq, C#1);
+        chartstoappend = append(chartstoappend, f*(oldCharts#Jringindex));
+        exceptionalstoappend = append(exceptionalstoappend, freshseq);
+    );
+
+    newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
+    newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
+
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
+);
+
 totalTransform = method(Options => {Divisorial => false});
 
-totalTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	chartMap := blowupCharts(J, m, Exceptional => false);
+totalTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
+    listofCharts := S#Charts;
+    outputList := {};
     if opts#Divisorial === false then (
-        return chartMap(I);
+        for phi in listofCharts do (
+            outputList = append(outputList, phi(I))
+        );
     );
-	if opts#Divisorial === true then (
-        return divisor(chartMap(I));
+    if opts#Divisorial === true then (
+        for phi in listofCharts do (
+            outputList = append(outputList, divisor(phi(I)))
+        );
     );
+    outputList
 );
 
 totalTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	outputlist := {};
-	for i from 1 to n do (
-		outputlist = append(outputlist, totalTransform(I, J, i, opts));
-	);
-	outputlist
+    S := blowupCharts(desingStep(ring(J)), J);
+    totalTransform(S, I)
 );
 
 strictTransform = method(Options => {Divisorial => false});
 
-strictTransform(Ideal, Ideal, ZZ) := opts -> (I, J, m) -> (
-	idealList := primaryDecomposition(totalTransform(I, J, m));
-    R := ring(idealList#0);
-    exceptionalLocus := (blowupCharts(J, m, Exceptional => true))#1;
-    for a in idealList do (
-        if radical(a) == sub(exceptionalLocus, R) then (
-            idealList = delete(a, idealList);
+strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
+    listofCharts := S#Charts;
+    exceptionalDivisors := S#Exceptionals;
+    numofCharts := #listofCharts;
+    preoutputList := {};
+    for i from 0 to (numofCharts - 1) do (
+        exceptionalLoci := exceptionalDivisors#i;
+        phi := listofCharts#i;
+        idealList := primaryDecomposition(phi(I));
+        R := ring(idealList#0);
+        for a in idealList do (
+            for E in exceptionalLoci do (
+                if radical(a) == sub(E, R) then (
+                    idealList = delete(a, idealList);
+                );
+            );
         );
+        outputIdeal := ideal(sub(1, R));
+        for a in idealList do (
+            outputIdeal = a*outputIdeal;
+        );
+        preoutputList = append(preoutputList, outputIdeal);
     );
-    outputIdeal := ideal(substitute(1, R));
-    for a in idealList do (
-        outputIdeal = a*outputIdeal;
-    );
-    if opts#Divisorial === false then (
-        return outputIdeal
-    );
-    if opts#Divisorial === true then (
-        return divisor(outputIdeal)
-    );
-   );
+    preoutputList
+);
 
 strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
-	n := #(flatten entries gens J);
-	L := {};
-	for i from 1 to n do (
-		littleL := strictTransform(I,J,i, opts);
-		L = append(L, littleL);
-	);
-	L
+    S := blowupCharts(desingStep(ring(J)), J);
+    strictTransform(S, I)
 );
 
 
@@ -329,13 +416,11 @@ doc ///
 doc ///
     Key 
         totalTransform
-        (totalTransform, Ideal, Ideal, ZZ)
         (totalTransform, Ideal, Ideal)
         [totalTransform, Divisorial]
     Headline
         Transporting ideals along blowups.
     Usage
-        totalTransform(I, J, n, Divisorial => b)
         totalTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
@@ -355,13 +440,11 @@ doc ///
 doc ///
     Key 
         strictTransform
-        (strictTransform, Ideal, Ideal, ZZ)
         (strictTransform, Ideal, Ideal)
         [strictTransform, Divisorial]
     Headline
         The non-exceptional part of the total transform. 
     Usage
-        strictTransform(I, J, n, Divisorial => b)
         strictTransform(I, J, Divisorial => b)
     Inputs
         I: Ideal
