@@ -18,7 +18,8 @@ export {
 "variableChange", 
 "preImage",
 "inverseMap", 
-"prunedringMap", 
+"prunedringMap",
+"prunedringMapInv", 
 "blowupCharts",
 "totalTransform",
 "strictTransform",
@@ -86,6 +87,18 @@ inverseMap(RingMap) := phi -> (
 );
 
 --TODO: add an error for when J is not principal. 
+
+prunedringMapInv = method();
+prunedringMapInv(Ring) := R -> (
+    prunedRing := prune R; 
+    badvars := flatten entries vars prunedRing;
+    goodvars := {};
+    for x in badvars do (
+        goodvars = append(goodvars, substitute(x, R))
+    );
+    phi := map(R, prunedRing, goodvars);
+    phi
+);
 
 prunedringMap = method();
 prunedringMap(Ring) := R -> (

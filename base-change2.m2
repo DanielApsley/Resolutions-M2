@@ -1,6 +1,5 @@
 needsPackage("Desingularization");
 
-prunedMapOfRings = method();
 prunedMapOfRings(RingMap) := (F) -> (
     R := F.source;
     S := F.target;
@@ -16,7 +15,7 @@ prunedMapOfRings(RingMap) := (F) -> (
 
 baseChangeRingMap = method();
 baseChangeRingMap(RingMap, Ring) := (F, L) -> (
-    PF := F; -- prunedMapOfRings(F);
+    PF := prunedMapOfRings(F);
     PR := PF.source;
     PS := PF.target;
 
@@ -50,3 +49,16 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
 
     return LF;
 );
+
+-- K = QQ;
+-- L = toField(K[x]/ideal(x^2-2));
+-- M = toField(L[y]/ideal(y^2-3));
+
+-- R = K[a,b,c]/ideal(a^2-b^2);
+-- S = K[s,t];
+
+-- F = map(S,R,{s^3-t^2, s^3-t^2, s-t}); -- ring map R to S
+
+-- LF = baseChangeRingMap(F, L);
+
+-- MF = baseChangeRingMap(F, M);
