@@ -128,7 +128,7 @@ prunedringMap(Ring) := R -> (
     inverseMap(phi)
 );
 
--- convenience method with "prunes" a ring homomorphism
+-- convenience method which "prunes" a ring homomorphism
 
 prunedMapOfRings = method();
 prunedMapOfRings(RingMap) := (F) -> (
@@ -244,6 +244,9 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     );
     Jrings := 0;
     Jringindex := -1;
+
+    -- checking the ideal we're blowing up is an ideal of one of the charts, and finding which chart it lives in.
+
     for R in oldTargets do (
         Jringindex = Jringindex + 1;
         if ring(J) === R then (
@@ -251,7 +254,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         );
     );
     if Jrings != 1 then (
-        error "expected ideal of the same ring"
+        error "expected ideal of some chart"
     );
     
     prenewvariable := concatenate{"T", toString(newStepNumber)};
@@ -264,12 +267,15 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     Cindex := -1;
     for C in newblowupcharts do (
         Cindex = Cindex + 1;
-        f := C#0;
+        pref := C#0;
+        g := oldCharts#Jringindex;
+        fvars := flatten entries matrix pref;
+        f := map(target pref, target g, fvars);
         localExcideal := C#1;
         freshseq := ();
         R := target(f);
         for exIdeal in oldseq do (
-            idealList := primaryDecomposition(f(exIdeal));
+            idealList := primaryDecomposition(f(sub(exIdeal, source f)));
             for a in idealList do (
                 if a == localExcideal then (
                     idealList = delete(a, idealList);
@@ -282,7 +288,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
             freshseq = append(freshseq, transformedExc);
         );
         freshseq = append(freshseq, C#1);
-        chartstoappend = append(chartstoappend, f*(oldCharts#Jringindex));
+        chartstoappend = append(chartstoappend, f*g);
         exceptionalstoappend = append(exceptionalstoappend, freshseq);
     );
 
@@ -340,12 +346,21 @@ strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
         );
         preoutputList = append(preoutputList, outputIdeal);
     );
-    preoutputList
+    outputList := {};
+    if opts#Divisorial === true then (
+        for J in preoutputList do (
+            outputList = append(outputList, divisor(J));
+        );
+    );
+    if opts#Divisorial === false then (
+        outputList = preoutputList
+    );
+    outputList
 );
 
 strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
     S := blowupCharts(desingStep(ring(J)), J);
-    strictTransform(S, I)
+    strictTransform(S, I, opts)
 );
 
 
