@@ -275,16 +275,8 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         freshseq := ();
         R := target(f);
         for exIdeal in oldseq do (
-            idealList := primaryDecomposition(f(sub(exIdeal, source f)));
-            for a in idealList do (
-                if a == localExcideal then (
-                    idealList = delete(a, idealList);
-                );
-            );
-            transformedExc := ideal(sub(1, R));
-            for a in idealList do (
-                transformedExc = a*transformedExc; 
-            );
+            unsaturatedExc := (f(sub(exIdeal, source f)));
+            transformedExc := saturate(unsaturatedExc, localExcideal);
             freshseq = append(freshseq, transformedExc);
         );
         freshseq = append(freshseq, C#1);
@@ -331,18 +323,10 @@ strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     for i from 0 to (numofCharts - 1) do (
         exceptionalLoci := exceptionalDivisors#i;
         phi := listofCharts#i;
-        idealList := primaryDecomposition(phi(I));
-        R := ring(idealList#0);
-        for a in idealList do (
-            for E in exceptionalLoci do (
-                if radical(a) == sub(E, R) then (
-                    idealList = delete(a, idealList);
-                );
-            );
-        );
-        outputIdeal := ideal(sub(1, R));
-        for a in idealList do (
-            outputIdeal = a*outputIdeal;
+        R := target phi;
+        outputIdeal := (totalTransform(S, I))#i;	
+        for E in exceptionalLoci do (
+		outputIdeal = saturate(outputIdeal, E)
         );
         preoutputList = append(preoutputList, outputIdeal);
     );
