@@ -251,6 +251,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         Jringindex = Jringindex + 1;
         if ring(J) === R then (
             Jrings = Jrings + 1;
+            break;
         );
     );
     if Jrings != 1 then (

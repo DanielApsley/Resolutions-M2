@@ -27,7 +27,7 @@ isTerminal(DesingularizationStep, Ideal) := (S, I) -> (
 highernodeResolution = method();
 highernodeResolution(ZZ) := r -> (
     I := ideal(y^2 - x^r);
-    movingStep := S; 
+    movingStep := S;
     while (isTerminal(movingStep, I) === true) == false do (
         L := strictTransform(movingStep, I);
         singularIndices = isTerminal(movingStep, I);
@@ -36,9 +36,9 @@ highernodeResolution(ZZ) := r -> (
         idealList := primaryDecomposition(singularIdeal);
         m := radical(idealList#0);
         movingStep = blowupCharts(movingStep, m);
-        if movingStep#StepNumber > r - 1 then (
-            error "this should be done by now. What is happening??"
-        )
+        -- if movingStep#StepNumber > r - 1 then (
+          --  error "this should be done by now. What is happening??"
+        --)
     );
     movingStep
 );
