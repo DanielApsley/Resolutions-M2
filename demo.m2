@@ -24,10 +24,9 @@ isTerminal(DesingularizationStep, Ideal) := (S, I) -> (
 
 -- Checks if the strict transform is smooth in each chart of a Step. 
 
-highernodeResolution = method();
-highernodeResolution(ZZ) := r -> (
-    I := ideal(y^2 - x^r);
-    movingStep := S;
+planecurveResolution = method();
+planecurveResolution(Ideal) := I -> (
+    movingStep := desingStep(ring I);
     while (isTerminal(movingStep, I) === true) == false do (
         L := strictTransform(movingStep, I);
         singularIndices = isTerminal(movingStep, I);
@@ -36,11 +35,6 @@ highernodeResolution(ZZ) := r -> (
         idealList := primaryDecomposition(singularIdeal);
         m := radical(idealList#0);
         movingStep = blowupCharts(movingStep, m);
-        -- if movingStep#StepNumber > r - 1 then (
-          --  error "this should be done by now. What is happening??"
-        --)
     );
     movingStep
 );
-
--- Running this for r = 6 gives an endless loop, and this is very slow.  
