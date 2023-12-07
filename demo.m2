@@ -1,4 +1,5 @@
 needsPackage("Desingularization");
+needsPackage("Divisor")
 R = QQ[x,y];
 --m = ideal(x,y);
 
@@ -10,7 +11,7 @@ isTerminal(DesingularizationStep, Ideal) := (S, I) -> (
     singularindices := {};
     L := strictTransform(S, I);
     for i from 0 to (#L) - 1 do (
-        if ideal(singularLocus(L#i)) != ideal(sub(1, ring(L#i))) then (
+        if sub(ideal(singularLocus(L#i)), ring(L#i)) != ideal(sub(1, ring(L#i))) then (
             singularindices = append(singularindices, i);
         );
     );
@@ -37,4 +38,25 @@ planecurveResolution(Ideal) := I -> (
         movingStep = blowupCharts(movingStep, m);
     );
     movingStep
+);
+
+
+nonSNClocus = method();
+
+nonSNClocus(Ideal) := I -> (
+    R := ring(I);
+    -- check if R defines a smooth surface
+    if (dim(R) != 2) or (ideal(singularLocus(R)) != ideal(sub(1, R))) then (
+        error "expected divisor on smooth surface"
+    );
+    -- TBC possibly restricting to I being a divisor.
+    -- find the singular locus of each component
+    components := primaryDecomposition(I);
+    outputIdeal := ideal(sub(1, R));
+    for J in components do (
+        outputIdeal = outputIdeal * (ideal singularLocus J);
+    );
+    -- find the singular locus of each intersection
+    -- find the triple intersection locus
+
 );
