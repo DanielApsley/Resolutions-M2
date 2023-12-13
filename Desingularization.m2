@@ -28,6 +28,7 @@ export {
 "isResolved",
 "isSmoothSurface",
 "desingStep",
+"nonSNCLocus",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -348,6 +349,104 @@ strictTransform(Ideal, Ideal) := opts -> (I, J) -> (
     strictTransform(S, I, opts)
 );
 
+--Auxiliary methods for nonSNCLocus.
+
+-- The method below finds all sublists of L of length k.
+
+subLists = method();
+
+subLists(ZZ, List) := (k, L) -> (
+    -- Base cases for recursive definition.
+    if k == 1 then (
+        outputlist := {};
+        for x in L do (
+            outputlist = append(outputlist, {x})
+        );
+        return outputlist
+    );
+    if #L == k then (
+        return {L}
+    );
+    -- Recursive step: We start with all the k-length sublists starting with x by recursively calling the function to find the k-1-length sublists of the list without x. Then we add the rest by recursively finding the k-length sublists of this punctured list. 
+    if (k > 1 and #L != k) then (
+        x := L#0;
+        puncturedList := delete(x, L);
+        TBA := {subLists(k, puncturedList), subLists(k - 1, puncturedList)};
+        tobeadded1 := TBA#1;
+        tobeadded2 := TBA#0;
+        indexnum := #(tobeadded1) - 1;
+        for i from 0 to indexnum do (
+            tobeadded1 = replace(i, insert(0, x, tobeadded1#i), tobeadded1)
+        );
+        outputList := flatten {tobeadded1, tobeadded2};
+        return outputList
+    );
+); 
+
+subLists(ZZ, ZZ) := (l, k) -> (
+    subLists(l, toList(1..k))
+);
+
+
+highcoeffComps = method();
+
+
+highcoeffComps(WeilDivisor) := D -> (
+    R := ring(D);
+    idealList := primes D;
+    redIdeal := ideal(sub(1, R)); 
+    for a in idealList do (
+        redIdeal = a * redIdeal;
+    );
+    redD := divisor(redIdeal);
+    primes(D - redD)
+);
+--TBC add checks or make this work for divisors which are not necessarily effective. 
+
+nonSNCLocus = method();
+
+nonSNCLocus(Ideal) := inputIdeal -> (
+    R := ring(inputIdeal);
+    n := dim(R);
+    outputIdeal := sub(ideal singularLocus R, R); 
+    -- Base case for recursion: singular dimension 0 points. Note the divisor is irrelevant here. This is why we initially define with an ideal.
+    if dim R == 0 then (
+        return outputIdeal;
+    );
+    D := divisor(inputIdeal);
+    comps := primes(D);
+    -- Multiplying the output by the components with coefficients higher than 1. Note divisor(J) is effective.
+    for J in highcoeffComps(D) do (
+        outputIdeal = J * outputIdeal
+    );
+    -- Multiplying the output by the ideals of intersections of too many divisors. 
+    if #comps > n then (
+        for L in subLists(n + 1, comps) do (
+            J := ideal(sub(0, R));
+            for a in L do (
+                J = J + a;
+            );
+            outputIdeal = J*outputIdeal
+        );
+    );
+    -- Recursive step: We run the above on every component of D, and then bring the ideals back to R.
+    indexnum := #comps - 1;
+    for i from 0 to indexnum do (
+        S := R/comps#i;
+        p := map(S, R, {});
+        satInput := saturate(inputIdeal, comps#i);
+        restrictedIdeal := p(satInput);
+        recursiveIdeal := nonSNCLocus(restrictedIdeal);
+        outputIdeal = preImage(p, recursiveIdeal) * outputIdeal
+    );
+    -- voila 
+    return outputIdeal;
+);
+
+nonSNCLocus(WeilDivisor) := D -> (
+    nonSNCLocus(ideal D)
+);
+
 
 isSmoothSurface = method();
 isSmoothSurface(Ring, Ideal) := (R,I) -> (
@@ -461,6 +560,27 @@ doc ///
         totalTransform
 ///
 
+doc ///
+    Key 
+        nonSNCLocus
+        (nonSNCLocus, Ideal)
+        (nonSNCLocus, WeilDivisor)
+    Headline
+        Finds the locus where an effective divisor isn't SNC
+    Usage
+        nonSNCLocus(I)
+        nonSNCLocus(D)
+    Inputs
+        I: Ideal
+        D: WeilDivisor
+    Outputs
+        : Ideal
+    Description
+        Text
+         This method finds the closed subset where an effective divisor is not SNC, given by the ideal of this closed subset, possibly with mulitplicities. Note that this is the non-SNC locus, meaning that components with coefficients >1 will contribute to this locus. This will also include the singular locus of the ambient ring. 
+    SeeAlso
+        totalTransform
+///
 
 TEST ///
    

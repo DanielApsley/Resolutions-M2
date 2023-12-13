@@ -136,3 +136,18 @@ isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 );
 
 -- With these older functions this isResolved method checks if the strict transform of I defines a nonsingular variety.
+
+keysfromValue = method();
+
+keysfromValue(HashTable, Thing) := (H, t) -> (
+    L := keys H;
+    output := {};
+    for k in L do (
+        if H#k === t then (
+            output = append(output, k);
+        );
+    );
+    output
+);
+
+-- H = new HashTable from {A => {1}, {B} => 2, {C} => {3}, D => 4, E => {1}};
