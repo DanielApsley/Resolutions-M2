@@ -151,3 +151,19 @@ keysfromValue(HashTable, Thing) := (H, t) -> (
 );
 
 -- H = new HashTable from {A => {1}, {B} => 2, {C} => {3}, D => 4, E => {1}};
+
+isSmoothSurface = method();
+isSmoothSurface(Ring, Ideal) := (R,I) -> (
+    d := divisor(I);
+    isSNC(d)
+);
+
+isSmoothSurface(Ring, WeilDivisor) := (R,d) -> (
+    isSNC(d)
+)
+
+isResolved = method(Options => {Exceptional => false});
+
+isResolved(Ideal, ZZ) := opts -> (I, n) -> (
+
+);

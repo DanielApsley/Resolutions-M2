@@ -25,8 +25,6 @@ export {
 "blowupCharts",
 "totalTransform",
 "strictTransform",
-"isResolved",
-"isSmoothSurface",
 "desingStep",
 "nonSNCLocus",
 -- Options
@@ -447,26 +445,27 @@ nonSNCLocus(WeilDivisor) := D -> (
     nonSNCLocus(ideal D)
 );
 
-
-isSmoothSurface = method();
-isSmoothSurface(Ring, Ideal) := (R,I) -> (
-    d := divisor(I);
-    isSNC(d)
-);
-
-isSmoothSurface(Ring, WeilDivisor) := (R,d) -> (
-    isSNC(d)
-)
-
-isResolved = method(Options => {Exceptional => false});
-
-isResolved(Ideal, ZZ) := opts -> (I, n) -> (
-
-);
-
--- TODO: make this function! 
-
 beginDocumentation()
+
+doc ///
+    Key 
+        desingStep
+        (desingStep, Ring)
+    Headline
+        Desingularization step from a ring.  
+    Usage
+        desingStep(R)
+    Inputs
+        R: Ring
+    Outputs
+        : DesingularizationStep
+    Description
+        Text
+         Outputs the desingularization step consisting of a single chart (the identity) and no exceptional divisors.   
+    SeeAlso
+        blowupCharts
+
+///
 
 doc ///
     Key 
@@ -492,22 +491,26 @@ doc ///
         blowupCharts
         (blowupCharts, Ideal, ZZ)
         (blowupCharts, Ideal)
+        (blowupCharts, DesingularizationStep, Ideal)
         [blowupCharts, Exceptional]
     Headline
-        Blowing up ideals of affine varieties. 
+        Blowing up ideals of affine varieties and charts.  
     Usage
-        blowupChart(J, n, Exceptional => b)
-        blowupChart(J)
+        blowupCharts(J, n, Exceptional => b)
+        blowupCharts(J)
+        blowupCharts(S, J)
     Inputs
         J: Ideal
         n: ZZ
         b: Boolean
+        S: DesingularizationStep
     Outputs
         : List
         : List
+        : DesingularizationStep
     Description
         Text
-         Finds the charts and exceptional divisors of the blowup of an affine scheme along an ideal. Outputs the n'th chart of the blowup of ring(J) along J. It will output a list of ring maps, together with ideals of the target which define the exceptional locus 
+         Finds the charts and exceptional divisors of the blowup of an affine scheme along an ideal. Outputs the n'th chart of the blowup of ring(J) along J. It will output a list of ring maps, together with ideals of the target which define the exceptional locus. Alternatively, this will replace a disingularization step by one obtained by blowing up the ideal J of one of the charts. 
     SeeAlso
 
 ///
@@ -516,22 +519,24 @@ doc ///
     Key 
         totalTransform
         (totalTransform, Ideal, Ideal)
+        (totalTransform, DesingularizationStep, Ideal)
         [totalTransform, Divisorial]
     Headline
         Transporting ideals along blowups.
     Usage
         totalTransform(I, J, Divisorial => b)
+        totalTransform(S, I)
     Inputs
         I: Ideal
         J: Ideal
-        n: ZZ
         b: Boolean
+        S: DesingularizationStep
     Outputs
-        : Ideal
+        : List
         : List
     Description
         Text
-         Computes the total transform of I in the blowup along J. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'. If Divisiorial is set to true, this outputs the associated divisor (resp. list of divisors).
+         Computes the total transform of I in the blowup along J. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'. If Divisiorial is set to true, this outputs the associated divisor (resp. list of divisors). If inputting a desingularization step, it will output the transform in each chart. 
     SeeAlso
         strictTransform
 ///
@@ -540,11 +545,13 @@ doc ///
     Key 
         strictTransform
         (strictTransform, Ideal, Ideal)
+        (strictTransform, DesingularizationStep, Ideal)
         [strictTransform, Divisorial]
     Headline
         The non-exceptional part of the total transform. 
     Usage
         strictTransform(I, J, Divisorial => b)
+        strictTransform(S, I)
     Inputs
         I: Ideal
         J: Ideal
@@ -555,7 +562,7 @@ doc ///
         : List
     Description
         Text
-         Computes the strict transform of I in the blowup along J. That is, it factors the exceptional part out of the total transform. The option determines whether to output an ideal or the associated divisor. 
+         Computes the strict transform of I in the blowup along J. That is, it factors the exceptional part out of the total transform. The option determines whether to output an ideal or the associated divisor. Similarly if putting in a desingularization step and an ideal of the base, it transforms the ideal in each of the charts. 
     SeeAlso
         totalTransform
 ///
@@ -582,8 +589,31 @@ doc ///
         totalTransform
 ///
 
-TEST ///
-   
+TEST /// --check #0 (variableChange, Ring, Symbol) checking that it outputs an isomorphism.  
+R = QQ[x,y,z];
+phi = variableChange(R, L9);
+phinverse = inverseMap(phi); 
+assert(ker phi == ideal(sub(0,source phi)));
+assert(ker phinverse == ideal(sub(0,source phinverse)))
+///
+
+TEST /// --check #1 (totalTransform, Ideal) checking that simple node is resolved. 
+needsPackage "Divisor";
+k = GF(5);
+R = k[x,y];
+m = ideal(x,y);
+I = ideal(y^3 - (x + y)*(x - y));
+L = totalTransform(I, m);
+
+singcharts = 0;
+
+for a in L do (
+    if isSNC(divisor(a)) != true then (
+        singcharts = singcharts + 1;
+    );
+);
+
+assert(singcharts == 0);
 ///
 
 
