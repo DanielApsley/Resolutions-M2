@@ -16,17 +16,15 @@ newPackage(
 export {
 -- Methods
 "variableChange", 
-"preImage",
 "inverseMap", 
-"prunedringMap",
-"prunedringMapInv", 
-"prunedMapOfRings",
 "baseChangeRingMap",
 "blowupCharts",
 "totalTransform",
 "strictTransform",
 "desingStep",
 "nonSNCLocus",
+"singularIndices",
+"curveResolution",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -445,7 +443,82 @@ nonSNCLocus(WeilDivisor) := D -> (
     nonSNCLocus(ideal D)
 );
 
+singularIndices = method();
+
+singularIndices(DesingularizationStep, Ideal) := (S, I) -> (
+    output := {};
+    L := totalTransform(S, I);
+    for i from 0 to (#L) - 1 do (
+        if sub(nonSNCLocus(radical L#i), ring(L#i)) != ideal(sub(1, ring(L#i))) then (
+            output = append(output, i);
+        );
+    );
+    return output
+);
+
+singularIndices(DesingularizationStep, WeilDivisor) := (S, D) -> (
+    singularIndices(S, ideal(D));
+);
+
+curveResolution = method();
+
+curveResolution(Ideal) := I -> (
+    -- Checking that I defines a curve in a surface.
+    R := ring(I);
+    if dim R != 2 or (ideal singularLocus R != ideal(sub(1, R))) then (
+        error "input is not in a smooth surface"
+    );
+
+    if I != ideal(divisor(I)) then (
+        error "input does not define a curve"
+    );
+
+    -- Running the algorithm. 
+    movingStep := desingStep(ring I);
+    while singularIndices(movingStep, I) != {} do (
+        L := totalTransform(movingStep, I);
+        i := (singularIndices(movingStep, I))#0;
+        singularIdeal := trim radical nonSNCLocus(radical L#i);
+        idealList := primaryDecomposition(singularIdeal);
+        m := idealList#0;
+        movingStep = blowupCharts(movingStep, m);
+    );
+    movingStep
+);
+
+curveResolution(WeilDivisor) := D -> (
+    curveResolution(ideal D)
+);
+
 beginDocumentation()
+
+doc ///
+    Key 
+        variableChange
+        (variableChange, Ideal, Symbol)
+        (variableChange, PolynomialRing, Symbol)
+        (variableChange, QuotientRing, Symbol)
+    Headline
+        Changes the variables of your ring.   
+    Usage
+        variableChange(I, s)
+        variableChange(R, s)
+        variableChange(Q, s)
+    Inputs
+        I: Ideal
+        R: PolynomialRing
+        Q: QuotientRing
+        s: Symbol
+    Outputs
+        : Ideal
+        : PolynomialRing
+        : QuotientRing
+    Description
+        Text
+         Depending on the input, this changes the variables and outputs the same object, but with enumerated variables s.  
+    SeeAlso
+
+///
 
 doc ///
     Key 
@@ -463,10 +536,77 @@ doc ///
         Text
          Outputs the desingularization step consisting of a single chart (the identity) and no exceptional divisors.   
     SeeAlso
-        blowupCharts
+        DesingularizationStep
 
 ///
 
+doc ///
+    Key 
+        DesingularizationStep
+    Headline
+        Data type for resolving singularities. 
+    Description
+        Text
+         This is a mutable hash table, consisting of a collection of charts, exceptional divisors, an intersection matrix, and the stepn umber.   
+    SeeAlso
+        desingStep
+        StepNumber
+        Charts
+        Exceptionals
+
+///
+
+doc ///
+    Key 
+        StepNumber
+    Headline
+        Step number in DesingularizationStep
+    Description
+        Text
+         This keeps track of which step of the resolution we are at. 
+    SeeAlso
+        DesingularizationStep
+
+///
+
+doc ///
+    Key 
+        Exceptionals
+    Headline
+        List of exceptional divisors in DesingularizationStep
+    Description
+        Text
+         For each chart, this gives a list of exceptional divisors intersecting that chart. 
+    SeeAlso
+        DesingularizationStep
+
+///
+
+doc ///
+    Key 
+        Charts
+    Headline
+        List of charts in DesingularizationStep
+    Description
+        Text
+         This collects the charts in a resolution step. 
+    SeeAlso
+        DesingularizationStep
+
+///
+
+doc ///
+    Key 
+        IntersectionMatrix
+    Headline
+        Interseciton data of a resolution step. 
+    Description
+        Text
+         This collects the intersection numbers of all the exceptional divisors in the blowup in the form of a matrix, as part of the data included in a DesingularizationStep. (Not implemented yet.)
+    SeeAlso
+        DesingularizationStep
+
+///
 doc ///
     Key 
         prunedringMap
@@ -488,30 +628,89 @@ doc ///
 
 doc ///
     Key 
+        baseChangeRingMap
+        (baseChangeRingMap, RingMap, Ring)
+    Headline
+        Base changing a ring map.
+    Usage
+        baseChangeRingMap(f, R)
+    Inputs
+        f: RingMap
+        R: Ring
+    Outputs
+        : RingMap
+    Description
+        Text
+         Outputs the map obtained by base changing the ring map to R, whenever possible.  
+    SeeAlso
+
+///
+
+doc ///
+    Key 
+        inverseMap
+        (inverseMap, RingMap)
+    Headline
+        Inverting ring maps
+    Usage
+        inverseMap(f)
+    Inputs
+        f: RingMap
+    Outputs
+        : RingMap
+    Description
+        Text
+         Finds the inverse map of a given isomorphism of rings.   
+    SeeAlso
+
+///
+doc ///
+    Key 
         blowupCharts
         (blowupCharts, Ideal, ZZ)
         (blowupCharts, Ideal)
+        (blowupCharts, Ideal, Symbol)
+        (blowupCharts, Ideal, ZZ, Symbol)
         (blowupCharts, DesingularizationStep, Ideal)
         [blowupCharts, Exceptional]
     Headline
         Blowing up ideals of affine varieties and charts.  
     Usage
         blowupCharts(J, n, Exceptional => b)
-        blowupCharts(J)
+        blowupCharts(J, Exceptional => b)
+        blowupCharts(I, s, Exceptional => b)
+        blowupCharts(I, n, s, Exceptional => b)
         blowupCharts(S, J)
     Inputs
         J: Ideal
         n: ZZ
+        s: Symbol
         b: Boolean
         S: DesingularizationStep
     Outputs
         : List
         : List
+        : List
+        : List
         : DesingularizationStep
     Description
         Text
-         Finds the charts and exceptional divisors of the blowup of an affine scheme along an ideal. Outputs the n'th chart of the blowup of ring(J) along J. It will output a list of ring maps, together with ideals of the target which define the exceptional locus. Alternatively, this will replace a disingularization step by one obtained by blowing up the ideal J of one of the charts. 
+         Finds the charts and exceptional divisors of the blowup of an affine scheme along an ideal. Outputs the n'th chart of the blowup of ring(J) along J. It will output a list of ring maps, together with ideals of the target which define the exceptional locus. The optional symbol input allows you to choose which variables are introduced in the blowup. (the default is "u".) The option determines if the exceptional divisors are included in the output. Alternatively, this will replace a disingularization step by one obtained by blowing up the ideal J of one of the charts. 
     SeeAlso
+        Exceptional
+
+///
+
+doc ///
+    Key 
+        Exceptional
+    Headline
+        Exceptional option for blowupCharts. 
+    Description
+        Text
+         This option decides if the blowupCharts method output includes exceptional divisors. 
+    SeeAlso
+        blowupCharts
 
 ///
 
@@ -538,7 +737,8 @@ doc ///
         Text
          Computes the total transform of I in the blowup along J. If X' -> X is the blowup and a is the ideal, this computes the local description of a*O_X'. If Divisiorial is set to true, this outputs the associated divisor (resp. list of divisors). If inputting a desingularization step, it will output the transform in each chart. 
     SeeAlso
-        strictTransform
+        Divisorial
+
 ///
 
 doc ///
@@ -564,7 +764,21 @@ doc ///
         Text
          Computes the strict transform of I in the blowup along J. That is, it factors the exceptional part out of the total transform. The option determines whether to output an ideal or the associated divisor. Similarly if putting in a desingularization step and an ideal of the base, it transforms the ideal in each of the charts. 
     SeeAlso
+        Divisorial
+///
+
+doc ///
+    Key 
+        Divisorial
+    Headline
+        Option for outputting divisors. 
+    Description
+        Text
+         This option controls whether the output of strictTransform or totalTransform is a divisor or an ideal. 
+    SeeAlso
+        strictTransform
         totalTransform
+
 ///
 
 doc ///
@@ -585,6 +799,51 @@ doc ///
     Description
         Text
          This method finds the closed subset where an effective divisor is not SNC, given by the ideal of this closed subset, possibly with mulitplicities. Note that this is the non-SNC locus, meaning that components with coefficients >1 will contribute to this locus. This will also include the singular locus of the ambient ring. 
+    SeeAlso
+        totalTransform
+///
+
+doc ///
+    Key 
+        singularIndices
+        (singularIndices, DesingularizationStep, Ideal)
+        (singularIndices, DesingularizationStep, WeilDivisor)
+    Headline
+        Finds the charts where the total transform is not SNC. 
+    Usage
+        singularIndices(S, I)
+        singularIndices(S, D)
+    Inputs
+        S: DesingularizationStep
+        I: Ideal
+        D: WeilDivisor
+    Outputs
+        : List
+    Description
+        Text
+         This method finds the charts in S where the total transform of I is not SNC. 
+    SeeAlso
+        totalTransform
+///
+
+doc ///
+    Key 
+        curveResolution
+        (curveResolution, Ideal)
+        (curveResolution, WeilDivisor)
+    Headline
+        Finds an embedded resolution of a curve (effective weil divisor) in a smooth surface.
+    Usage
+        curveResolution(I)
+        curveREsolution(D)
+    Inputs
+        I: Ideal
+        D: WeilDivisor
+    Outputs
+        : DesingularizationStep
+    Description
+        Text
+         This repeatedly blows up non-SNC points until the total transform of D has SNC support. 
     SeeAlso
         totalTransform
 ///
@@ -616,34 +875,37 @@ for a in L do (
 assert(singcharts == 0);
 ///
 
+TEST /// --check #2 (blowupCharts, Ideal) blowing up trivial ideals.
+R = QQ[x,y,z]/ideal(x^2 + y^2 - z);
+--t1 = ideal(sub(0, R)); TBC: What is going on here? Make an error or something to fix this. 
+t2 = ideal(sub(1, R));
+t3 = ideal(x); 
 
+-- phi1 = inverseMap(((blowupCharts(t1)#0))#0);
+phi2 = inverseMap(((blowupCharts(t2))#0)#0);
+phi3 = inverseMap(((blowupCharts(t3))#0)#0);
 
-end--
+--assert(ker phi1 == ideal(sub(0,source phi1)));
+assert(ker phi2 == ideal(sub(0,source phi2)));
+assert(ker phi3 == ideal(sub(0,source phi3)));
+///
 
--- T = QQ[x,y];
--- J = ideal(x,y);
--- I = ideal(x^3 - x^2 + y^2);
+TEST /// --check #3 (strictTransform, DesingularizationStep, Ideal) resolving the Whitney umbrella
+R = QQ[x,y,z];
+J = ideal(x,y); -- center of blowup
+I = ideal(x^2*z - y^2); -- whitney umbrella
 
- -- I defines a nodal cubic resolved by one blow-up at the origin. The following command computes the ideal of the strict transform of I in the first chart.
+S = desingStep(R);
+T = blowupCharts(S, J);
 
--- strictTransform(I, J, 1)
--- T = QQ[x,y,z];
--- I = ideal(x^2*z - y^2); -- whitney umbrella
+L = strictTransform(T, I);
 
--- isResolved(I, 3)
--- isResolved(I, 2)
+for a in L do (
+    assert(ideal singularLocus a == ideal(sub(1, ring a)));
+);
+///
 
--- Testing the prune map function
+end
 
--- R = QQ[x,y,z];
--- m = ideal(x,y,z);
--- testcharts = affineCharts(m);
--- f = testcharts#0;
--- Q = target f;
--- prunedringMap(Q);
-
--- TODO: Add the following tests
-
--- Check the strict transform of reducible ideals like x*y + y^3. Better yet if the singular locus is not the origin. 
 
 
