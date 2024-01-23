@@ -25,6 +25,8 @@ export {
 "nonSNCLocus",
 "singularIndices",
 "curveResolution",
+"restrictDivisor",
+"nonSNCLocusAlongIdeal",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -411,11 +413,11 @@ nonSNCLocus(Ideal) := inputIdeal -> (
     );
     D := divisor(inputIdeal);
     comps := primes(D);
-    -- Multiplying the output by the components with coefficients higher than 1. Note divisor(J) is effective.
+    -- STEP 1: Multiplying the output by the components with coefficients higher than 1. Note divisor(J) is effective.
     for J in highcoeffComps(D) do (
         outputIdeal = J * outputIdeal
     );
-    -- Multiplying the output by the ideals of intersections of too many divisors. 
+    -- STEP 2: Multiplying the output by the ideals of intersections of too many divisors. 
     if #comps > n then (
         for L in subLists(n + 1, comps) do (
             J := ideal(sub(0, R));
@@ -425,7 +427,7 @@ nonSNCLocus(Ideal) := inputIdeal -> (
             outputIdeal = J*outputIdeal
         );
     );
-    -- Recursive step: We run the above on every component of D, and then bring the ideals back to R.
+    -- STEP 3: Recursive step: We run the above on every component of D, and then bring the ideals back to R.
     indexnum := #comps - 1;
     for i from 0 to indexnum do (
         S := R/comps#i;
@@ -442,6 +444,29 @@ nonSNCLocus(Ideal) := inputIdeal -> (
 nonSNCLocus(WeilDivisor) := D -> (
     nonSNCLocus(ideal D)
 );
+
+nonSNCLocusAlongIdeal = method();
+
+nonSNCLocusAlongIdeal(WeilDivisor, Ideal) := (D,I) -> (
+    -- check along I
+    R := ring(I);
+    (E,p) := restrictDivisor(D,I);
+    J := nonSNCLocus(E);
+    preImage(p, J)
+);
+
+restrictDivisor = method();
+
+restrictDivisor(WeilDivisor, Ideal) := (D,I) -> (
+    R := ring(I);
+    S := R/I;
+    p := map(S,R, {});
+
+    J := ideal(D);
+    Jsat := saturate(J, I);
+
+    return (divisor(p(Jsat)), p)
+)
 
 singularIndices = method();
 
@@ -903,6 +928,29 @@ L = strictTransform(T, I);
 for a in L do (
     assert(ideal singularLocus a == ideal(sub(1, ring a)));
 );
+///
+
+TEST /// --check #4 (nonSNCLocusAlongIdeal, WeilDivisor, Ideal) 
+needsPackage "Divisor";
+R = QQ[x,y];
+I1 = ideal(y-x^2);
+J1 = ideal(y);
+D1 = divisor(I1*J1);
+a1 = nonSNCLocusAlongIdeal(D1,J1); -- expect (x,y)
+
+I2 = ideal(y-x^2*(x-1));
+J2 = ideal(y);
+D2 = divisor(I2*J2);
+a2 = nonSNCLocusAlongIdeal(D2,J2); -- expect (x,y)
+
+I3 = ideal((y-2*x)*(y-3*x));
+J3 = ideal(y-x);
+D3 = divisor(I3*J3);
+a3 = nonSNCLocusAlongIdeal(D3,J3); -- expect (x,y)
+
+assert(a1 == ideal(x,y));
+assert(a2 == ideal(x,y));
+assert(a3 == ideal(x,y));
 ///
 
 end
