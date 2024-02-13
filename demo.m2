@@ -39,3 +39,12 @@ I3 = ideal((y-2*x)*(y-3*x));
 J3 = ideal(y-x);
 D3 = divisor(I3*J3);
 a3 = nonSNCLocusAlongIdeal(D3,J3); -- expect (x,y)
+
+
+
+
+
+
+S = QQ[x,y,z];
+I = ideal(x*y - z^2);
+R = S/I;

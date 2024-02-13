@@ -515,6 +515,35 @@ curveResolution(WeilDivisor) := D -> (
     curveResolution(ideal D)
 );
 
+projDesingStep = method();
+projDesingStep(QuotientRing) := R -> (
+    if isHomogeneous(R) == false then (
+        error "expected homogeneous ring"
+    );
+    L := flatten entries vars R;
+    n := #L;
+    k := coefficientRing(R);
+    S := k[L];
+    I := ideal R;
+    deg := degree I;
+    affCharts := {};
+    for i from 0 to (n - 1) do (
+        affineVars := delete(L#i, L);
+        affineRing := k[affineVars];
+        for i from 0 to (n - 2) do (
+            affineVars = replace(i, sub(affineVars#i, affineRing), affineVars);
+        );
+        mappingVars := insert(i, sub(1, affineRing), affineVars);
+        phi := map(affineRing, S, mappingVars);
+        affineIdeal := phi(sub(I, S));
+        affR := affineRing/affineIdeal;
+        newChart := map(affR, affR, flatten entries vars affR);
+        affCharts = append(affCharts, newChart);
+    );
+    return new DesingularizationStep from {Charts => affCharts, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
+);
+
+
 beginDocumentation()
 
 doc ///
