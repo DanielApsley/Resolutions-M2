@@ -8,7 +8,7 @@ newPackage(
     {Name => "Joseph Sullivan", Email => "jsullivan@math.utah.edu", HomePage => "https://partiallyordered.com/"}},
     Headline => "Resolving Singularities in Macaulay2",
     Keywords => {"Algebraic Geometry"},
-    PackageImports => { "ReesAlgebra", "Divisor", "PrimaryDecomposition" },
+    PackageImports => { "ReesAlgebra", "Divisor", "PrimaryDecomposition", "IntegralClosure" },
     DebuggingMode => true,
     Reload=>true
     );
@@ -27,6 +27,7 @@ export {
 "curveResolution",
 "restrictDivisor",
 "nonSNCLocusAlongIdeal",
+"normalizeStep",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -289,6 +290,33 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
 
     new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
 );
+
+-- takes in and outputs desingularization step
+-- performs integral closure of each chart, and composes with all the blow ups
+-- pull back the divisors
+normalizeStep = method();
+
+normalizeStep(DesingularizationStep) := S -> (
+    newStepNumber := S#StepNumber + 1;
+    newCharts := {};
+    newExceptionals := {};
+    Cindex := 0;
+    for oldChart in S#Charts do (
+        icMapForChart := icMap(target(oldChart));
+        newChart := icMapForChart * oldChart;
+        newCharts = append(newCharts, newChart);
+        
+        newExceptionalsForChart := {};
+        for exceptional in (S#Exceptionals)#Cindex do (
+            newExceptional := icMapForChart(exceptional);
+            newExceptionalsForChart = append(newExceptionalsForChart, newExceptional);
+        );
+        newExceptionals = append(newExceptionals, newExceptionalsForChart);
+
+        Cindex = Cindex + 1;
+    );
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
+)
 
 totalTransform = method(Options => {Divisorial => false});
 
@@ -980,6 +1008,16 @@ a3 = nonSNCLocusAlongIdeal(D3,J3); -- expect (x,y)
 assert(a1 == ideal(x,y));
 assert(a2 == ideal(x,y));
 assert(a3 == ideal(x,y));
+///
+
+TEST /// --check #5 (normalizeStep, DesingularizationStep) 
+R = QQ[x,y,z]/(x^2*z-y^3);
+I = ideal(z-1);
+
+S = desingStep(R);
+S#Exceptionals = {{I}};
+
+normalizeStep(S);
 ///
 
 end
