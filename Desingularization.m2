@@ -48,6 +48,10 @@ desingStep(Ring) := R -> (
 	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
 );
 
+desingStep(WeilDivisor) := D -> (
+
+)
+
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
 	oldVars := flatten entries vars R;
@@ -283,6 +287,15 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         freshseq = append(freshseq, C#1);
         chartstoappend = append(chartstoappend, f*g);
         exceptionalstoappend = append(exceptionalstoappend, freshseq);
+    );
+
+    -- Adding an empty exceptional divisor in each irrelevant chart. 
+    if newStepNumber > 1 then (
+        numolds := #(oldExceptionals);
+        for i from 0 to numolds - 1 do (
+            chartRing := ring((oldExceptionals#i)#0);
+            oldExceptionals = replace(i, append(oldExceptionals#i, sub(1, chartRing)), oldExceptionals)
+        );
     );
 
     newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
