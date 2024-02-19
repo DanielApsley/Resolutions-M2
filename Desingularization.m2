@@ -325,6 +325,7 @@ normalizeStep(DesingularizationStep) := S -> (
     newStepNumber := S#StepNumber + 1;
     newCharts := {};
     newExceptionals := {};
+    newBoundary := {};
     Cindex := 0;
     for oldChart in S#Charts do (
         icMapForChart := icMap(target(oldChart));
@@ -338,9 +339,12 @@ normalizeStep(DesingularizationStep) := S -> (
         );
         newExceptionals = append(newExceptionals, newExceptionalsForChart);
 
+        newBoundaryForChart := divisor icMapForChart(ideal((S#Boundary)#Cindex));
+        newBoundary = append(newBoundary, newBoundaryForChart);
+
         Cindex = Cindex + 1;
     );
-    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, Boundary => newBoundary}
 )
 
 totalTransform = method(Options => {Divisorial => false});
