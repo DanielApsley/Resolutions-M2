@@ -44,12 +44,12 @@ needsPackage("Divisor")
 
 R = QQ[x,y];
 I = ideal(x^2 - y^5);
-init = desingStep(R);
+init = desingStep(divisor(I));
 m = ideal(x,y)
 
 Step = blowupCharts(init, m);
 
-R2 = target (Step#Charts)#0;
+R2 = target((Step#Charts)#0);
 mm = sub(ideal(T1_1, T1_2), R2);
 
 

@@ -36,7 +36,8 @@ export {
 "Charts",
 "StepNumber",
 "IntersectionMatrix",
-"Exceptionals"
+"Exceptionals",
+"Boundary"
 };
 
 -- Change the above as needed! We will probably take out a good chunk of these before submission. 
@@ -45,12 +46,13 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {}}
 );
 
 desingStep(WeilDivisor) := D -> (
-
-)
+    R := ring(D);
+    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
+);
 
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
@@ -248,6 +250,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     );
     Jrings := 0;
     Jringindex := -1;
+    oldBoundary := S#Boundary;
 
     -- checking the ideal we're blowing up is an ideal of one of the charts, and finding which chart it lives in.
 
@@ -266,9 +269,13 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newvariable := getSymbol prenewvariable;
     newblowupcharts := blowupCharts(J, newvariable, Exceptional => true);
     oldseq := (oldExceptionals)#Jringindex;
-
+    if #oldBoundary != 0 then (
+        oldDIdeal := ideal oldBoundary#Jringindex;
+    );
+    
     chartstoappend := {};
     exceptionalstoappend := {};
+    boundarytoappend := {};
     Cindex := -1;
     for C in newblowupcharts do (
         Cindex = Cindex + 1;
@@ -287,6 +294,9 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         freshseq = append(freshseq, C#1);
         chartstoappend = append(chartstoappend, f*g);
         exceptionalstoappend = append(exceptionalstoappend, freshseq);
+        if #oldBoundary != 0 then(
+                boundarytoappend = append(boundarytoappend, divisor(f(sub(oldDIdeal, source f))));
+        );
     );
 
     -- Adding an empty exceptional divisor in each irrelevant chart. 
@@ -300,8 +310,10 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
 
     newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
     newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
+    newBoundary := flatten replace(Jringindex, boundarytoappend, oldBoundary);
 
-    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals}
+
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, Boundary => newBoundary}
 );
 
 -- takes in and outputs desingularization step
