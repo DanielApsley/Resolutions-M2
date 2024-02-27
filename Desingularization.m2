@@ -28,12 +28,14 @@ export {
 "restrictDivisor",
 "nonSNCLocusAlongIdeal",
 "normalizeStep",
+"projDesingStep",
 -- Options
 "Exceptional",
 "Divisorial",
 -- Types and Terms
 "DesingularizationStep",
 "Charts",
+"CheckLoci",
 "StepNumber",
 "IntersectionMatrix",
 "Exceptionals",
@@ -46,12 +48,12 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {}}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {}}
 );
 
 desingStep(WeilDivisor) := D -> (
     R := ring(D);
-    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
+    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
 );
 
 variableChange = method();
@@ -584,6 +586,7 @@ projDesingStep(QuotientRing) := R -> (
     I := ideal R;
     deg := degree I;
     affCharts := {};
+    checkLoci := {};
     for i from 0 to (n - 1) do (
         affineVars := delete(L#i, L);
         affineRing := k[affineVars];
@@ -594,10 +597,17 @@ projDesingStep(QuotientRing) := R -> (
         phi := map(affineRing, S, mappingVars);
         affineIdeal := phi(sub(I, S));
         affR := affineRing/affineIdeal;
+        -- the locus where we should check for singularities
+        -- if charts are U0, U1, U2, ..., Un
+        -- want to only look for singualarities (to avoid redundancy) by looking in
+        -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
+        checkLocus := ideal(apply(L_{1..i}, x->sub(x,affR)));
+
         newChart := map(affR, affR, flatten entries vars affR);
         affCharts = append(affCharts, newChart);
+        checkLoci = append(checkLoci, checkLocus);
     );
-    return new DesingularizationStep from {Charts => affCharts, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
 );
 
 
