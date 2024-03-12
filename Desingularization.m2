@@ -56,6 +56,42 @@ desingStep(WeilDivisor) := D -> (
     new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
 );
 
+projDesingStep = method();
+projDesingStep(Ring) := R -> (
+    if isHomogeneous(R) == false then (
+        error "expected homogeneous ring"
+    );
+    L := flatten entries vars R;
+    n := #L;
+    k := coefficientRing(R);
+    S := k[L];
+    I := ideal R;
+    deg := degree I;
+    affCharts := {};
+    checkLoci := {};
+    for i from 0 to (n - 1) do (
+        affineVars := delete(L#i, L);
+        affineRing := k[affineVars];
+        for i from 0 to (n - 2) do (
+            affineVars = replace(i, sub(affineVars#i, affineRing), affineVars);
+        );
+        mappingVars := insert(i, sub(1, affineRing), affineVars);
+        phi := map(affineRing, S, mappingVars);
+        affineIdeal := phi(sub(I, S));
+        affR := affineRing/affineIdeal;
+        -- the locus where we should check for singularities
+        -- if charts are U0, U1, U2, ..., Un
+        -- want to only look for singualarities (to avoid redundancy) by looking in
+        -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
+        checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
+
+        newChart := map(affR, affR, flatten entries vars affR);
+        affCharts = append(affCharts, newChart);
+        checkLoci = append(checkLoci, checkLocus);
+    );
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
+);
+
 variableChange = method();
 variableChange(PolynomialRing, Symbol) := (R, t) -> (
 	oldVars := flatten entries vars R;
@@ -572,42 +608,6 @@ curveResolution(Ideal) := I -> (
 
 curveResolution(WeilDivisor) := D -> (
     curveResolution(ideal D)
-);
-
-projDesingStep = method();
-projDesingStep(Ring) := R -> (
-    if isHomogeneous(R) == false then (
-        error "expected homogeneous ring"
-    );
-    L := flatten entries vars R;
-    n := #L;
-    k := coefficientRing(R);
-    S := k[L];
-    I := ideal R;
-    deg := degree I;
-    affCharts := {};
-    checkLoci := {};
-    for i from 0 to (n - 1) do (
-        affineVars := delete(L#i, L);
-        affineRing := k[affineVars];
-        for i from 0 to (n - 2) do (
-            affineVars = replace(i, sub(affineVars#i, affineRing), affineVars);
-        );
-        mappingVars := insert(i, sub(1, affineRing), affineVars);
-        phi := map(affineRing, S, mappingVars);
-        affineIdeal := phi(sub(I, S));
-        affR := affineRing/affineIdeal;
-        -- the locus where we should check for singularities
-        -- if charts are U0, U1, U2, ..., Un
-        -- want to only look for singualarities (to avoid redundancy) by looking in
-        -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
-        checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
-
-        newChart := map(affR, affR, flatten entries vars affR);
-        affCharts = append(affCharts, newChart);
-        checkLoci = append(checkLoci, checkLocus);
-    );
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
 );
 
 
