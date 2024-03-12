@@ -575,7 +575,7 @@ curveResolution(WeilDivisor) := D -> (
 );
 
 projDesingStep = method();
-projDesingStep(QuotientRing) := R -> (
+projDesingStep(Ring) := R -> (
     if isHomogeneous(R) == false then (
         error "expected homogeneous ring"
     );
@@ -601,7 +601,7 @@ projDesingStep(QuotientRing) := R -> (
         -- if charts are U0, U1, U2, ..., Un
         -- want to only look for singualarities (to avoid redundancy) by looking in
         -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
-        checkLocus := ideal(apply(L_{1..i}, x->sub(x,affR)));
+        checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
 
         newChart := map(affR, affR, flatten entries vars affR);
         affCharts = append(affCharts, newChart);
