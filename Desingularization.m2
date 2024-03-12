@@ -230,9 +230,21 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
 
 blowupCharts = method(Options => {Exceptional => true});
 
+-- blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
+--     a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
+-- 	A := ring(J);
+--     B := ring(a);
+--     rees := B/a; -- Rees algebra of J
+--     D := projDesingStep(rees);
+--     precharts := D#Charts;
+    
+
+-- )
+
+
 blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
 	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
-	A := ring(J);
+	A := ring(J); 
 	B := ring(a);
 	StructureB := map(B, A, {});
 	n := #gens B;
@@ -349,6 +361,8 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
     newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
     newBoundary := flatten replace(Jringindex, boundarytoappend, oldBoundary);
+
+    newCheckLoci := 
 
 
     new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, Boundary => newBoundary}
