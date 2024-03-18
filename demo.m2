@@ -43,14 +43,25 @@ needsPackage("Divisor")
 
 
 R = QQ[x,y];
-I = ideal(x^2 - y^5);
-init = desingStep(divisor(I));
-m = ideal(x,y)
+I = ideal(x,y);
 
-Step = blowupCharts(init, m);
+blowupChartz = method(Options => {Exceptional => true});
 
-R2 = target((Step#Charts)#0);
-mm = sub(ideal(T1_1, T1_2), R2);
+blowupChartz(Ideal, Symbol) := opts -> (J,s) -> (
+    a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
+	A := ring(J);
+    B := ring(a);
+    structureB := map(B/a, A, {});
 
+    rees := B/a; -- Rees algebra of J
+    D := projDesingStep(rees, AuxiliaryInfo => true);
+    precharts := D#Charts;
+
+    newCharts := {};
+    for phi in precharts do (
+        newCharts = append(newCharts, variableChange(phi * structureB, s));
+    );
+    return newCharts
+);
 
 

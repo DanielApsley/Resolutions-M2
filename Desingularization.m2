@@ -32,6 +32,7 @@ export {
 -- Options
 "Exceptional",
 "Divisorial",
+"AuxiliaryInfo",
 -- Types and Terms
 "DesingularizationStep",
 "Charts",
@@ -56,8 +57,10 @@ desingStep(WeilDivisor) := D -> (
     new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
 );
 
-projDesingStep = method();
-projDesingStep(Ring) := R -> (
+-- AuxiliaryInfo outputs the dehomogenization maps as charts. Intended for strictly internal use. 
+
+projDesingStep =  method(Options => {AuxiliaryInfo => false});
+projDesingStep(Ring) := opts -> R -> (
     if isHomogeneous(R) == false then (
         error "expected homogeneous ring"
     );
@@ -69,13 +72,15 @@ projDesingStep(Ring) := R -> (
     deg := degree I;
     affCharts := {};
     checkLoci := {};
+    mappingVars := {};
+    newChart := map(R,R, flatten entries vars R);
     for i from 0 to (n - 1) do (
         affineVars := delete(L#i, L);
         affineRing := k[affineVars];
         for i from 0 to (n - 2) do (
             affineVars = replace(i, sub(affineVars#i, affineRing), affineVars);
         );
-        mappingVars := insert(i, sub(1, affineRing), affineVars);
+        mappingVars = insert(i, sub(1, affineRing), affineVars);
         phi := map(affineRing, S, mappingVars);
         affineIdeal := phi(sub(I, S));
         affR := affineRing/affineIdeal;
@@ -84,11 +89,21 @@ projDesingStep(Ring) := R -> (
         -- want to only look for singualarities (to avoid redundancy) by looking in
         -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
         checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
-
-        newChart := map(affR, affR, flatten entries vars affR);
-        affCharts = append(affCharts, newChart);
         checkLoci = append(checkLoci, checkLocus);
+        if opts#AuxiliaryInfo === false then (
+            newChart = map(affR, affR, flatten entries vars affR);
+            affCharts = append(affCharts, newChart);
+        );
+        if opts#AuxiliaryInfo === true then (
+            for i from 0 to (#mappingVars - 1) do (
+                mappingVars = replace(i, sub(mappingVars#i, affR), mappingVars);
+            );
+            newChart = map(affR, R, mappingVars);
+            affCharts = append(affCharts, newChart); 
+        );
     );
+    
+    
     return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
 );
 
@@ -113,6 +128,10 @@ variableChange(QuotientRing, Symbol) := (R, t) -> (
 	phi := map(freshRing, R, vars freshRing);
 	phi
 );
+
+variableChange(RingMap, Symbol) := (phi, t) -> (
+    return variableChange(target phi, t) * phi
+)
 
 
 variableChange(Ideal, Symbol) := (I, t) -> (
@@ -230,51 +249,30 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
 
 blowupCharts = method(Options => {Exceptional => true});
 
--- blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
---     a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
--- 	A := ring(J);
---     B := ring(a);
---     rees := B/a; -- Rees algebra of J
---     D := projDesingStep(rees);
---     precharts := D#Charts;
-    
+blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
+    a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
+	A := ring(J);
+    B := ring(a);
+    structureB := map(B/a, A, {});
 
--- )
+    rees := B/a; -- Rees algebra of J
+    D := projDesingStep(rees, AuxiliaryInfo => true);
+    precharts := D#Charts;
 
-
-blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
-	a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
-	A := ring(J); 
-	B := ring(a);
-	StructureB := map(B, A, {});
-	n := #gens B;
-
-	if (m < 1) or (m > n) then (
-		error "chart number out of range";
-	);
-    u := local u;
-	AffineRing := A[u_1..u_(n - 1)];
-	structureMap := map(AffineRing, A, {});
-
-	coolBeans := flatten flatten {toList(u_1..u_(m - 1)), 1, toList(u_m..u_(n - 1))};
-	phi := map(AffineRing, B, coolBeans);
-	quotient := AffineRing/phi(a);
-	projection := map(quotient, AffineRing, {});
-	preoutputMap := prunedringMap(quotient)*projection * structureMap;
-    outputMap := variableChange(target(preoutputMap), s) * preoutputMap;
-    exceptionalIdeal := trim outputMap(J);
-    if opts#Exceptional === true then (
-        return {outputMap, exceptionalIdeal};
+    newCharts := {};
+    for phi in precharts do (
+        newCharts = append(newCharts, variableChange(phi * structureB, s));
     );
-    if opts#Exceptional === false then (
-        return outputMap;
-    );
+    return newCharts
 );
 
+blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
+	return blowupCharts(J, s)#m;
+);
 
 blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
     u := local u;
-    return blowupCharts(J, m, u);
+    return blowupCharts(J, u)#m;
 );
 
 blowupCharts(Ideal, Symbol) := opts -> (I, s) -> (
