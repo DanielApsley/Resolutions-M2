@@ -50,21 +50,21 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {divisor(sub(1, R))}}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {{}}, Boundary => {divisor(sub(1, R))}}
 );
 
 desingStep(WeilDivisor) := D -> (
     R := ring(D);
-    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {D}}
+    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {{}}, Boundary => {D}}
 );
 
 -- AuxiliaryInfo outputs the dehomogenization maps as charts. Intended for strictly internal use. 
 
 projDesingStep =  method(Options => {AuxiliaryInfo => false});
 projDesingStep(Ring) := opts -> R -> (
-    if isHomogeneous(R) == false then (
-        error "expected homogeneous ring"
-    );
+    -- if isHomogeneous(R) == false then (
+    --     error "expected homogeneous ring"
+    -- );
     L := flatten entries vars R;
     n := #L;
     k := coefficientRing(R);
@@ -105,7 +105,7 @@ projDesingStep(Ring) := opts -> R -> (
     );
     
     
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->sub(0, target(chart)))}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->{})}
 );
 
 variableChange = method();
@@ -321,7 +321,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         fvars := flatten entries matrix pref;
         f := map(target pref, target g, fvars);
         localExcideal := C#1;
-        freshseq := ();
+        freshseq := {};
         R := target(f);
         for exIdeal in oldseq do (
             unsaturatedExc := (f(sub(exIdeal, source f)));
@@ -341,7 +341,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         numolds := #(oldExceptionals);
         for i from 0 to numolds - 1 do (
             chartRing := ring((oldExceptionals#i)#0);
-            oldExceptionals = replace(i, append(oldExceptionals#i, sub(1, chartRing)), oldExceptionals)
+            oldExceptionals = replace(i, {append(oldExceptionals#i, sub(1, chartRing))}, oldExceptionals)
         );
     );
 
