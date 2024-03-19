@@ -105,7 +105,7 @@ projDesingStep(Ring) := opts -> R -> (
     );
     
     
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => {()}}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->sub(0, target(chart)))}
 );
 
 variableChange = method();
