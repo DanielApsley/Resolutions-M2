@@ -33,6 +33,7 @@ export {
 "Exceptional",
 "Divisorial",
 "AuxiliaryInfo",
+"AuxiliaryData",
 -- Types and Terms
 "DesingularizationStep",
 "Charts",
@@ -247,45 +248,32 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
 );
 
 
-blowupCharts = method(Options => {Exceptional => true});
+blowupCharts = method(Options => {AuxiliaryData => false});
 
 blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
     a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
 	A := ring(J);
     B := ring(a);
-    structureB := map(B/a, A, {});
-
+    
     rees := B/a; -- Rees algebra of J
+    structureB := map(rees, A, {});
+
     D := projDesingStep(rees, AuxiliaryInfo => true);
     precharts := D#Charts;
 
     newCharts := {};
+    newExceptionals := {};
     for phi in precharts do (
-        newCharts = append(newCharts, variableChange(phi * structureB, s));
+        psi := variableChange(phi * structureB, s);
+        newCharts = append(newCharts, psi);
+        newExceptionals = append(newExceptionals, psi(J));
     );
-    return newCharts
-);
-
-blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
-	return blowupCharts(J, s)#m;
-);
-
-blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
-    u := local u;
-    return blowupCharts(J, u)#m;
-);
-
-blowupCharts(Ideal, Symbol) := opts -> (I, s) -> (
-	listofCharts := {};
-	for i from 1 to (#(flatten entries gens I)) do (
-		listofCharts = append(listofCharts, blowupCharts(I, i,s, opts))
-	);
-	listofCharts
-);
-
-blowupCharts(Ideal) := opts -> I -> (
-    u := local u;
-    blowupCharts(I, u)
+    if opts#AuxiliaryData === true then (
+        return (newCharts, newExceptionals, D#CheckLoci);
+    );
+    if opts#AuxiliaryData === false then (
+        return newCharts;
+    );
 );
 
 blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
@@ -315,7 +303,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;
-    newblowupcharts := blowupCharts(J, newvariable, Exceptional => true);
+    (newblowupcharts, newexceptionals, newcheckloci) := blowupCharts(J, newvariable, AuxiliaryData => true);
     oldseq := (oldExceptionals)#Jringindex;
     if #oldBoundary != 0 then (
         oldDIdeal := ideal oldBoundary#Jringindex;
@@ -324,9 +312,10 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     chartstoappend := {};
     exceptionalstoappend := {};
     boundarytoappend := {};
-    Cindex := -1;
-    for C in newblowupcharts do (
-        Cindex = Cindex + 1;
+    checklocitoappend := {};
+
+    for i from 0 to (#newblowupcharts - 1) do (
+        C := (newblowupcharts#i, newexceptionals#i, newcheckloci#i);
         pref := C#0;
         g := oldCharts#Jringindex;
         fvars := flatten entries matrix pref;
@@ -359,10 +348,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
     newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
     newBoundary := flatten replace(Jringindex, boundarytoappend, oldBoundary);
-
-    newCheckLoci := 
-
-
+    -- newCheckLoci := 
     new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, Boundary => newBoundary}
 );
 
@@ -800,12 +786,8 @@ doc ///
 doc ///
     Key 
         blowupCharts
-        (blowupCharts, Ideal, ZZ)
-        (blowupCharts, Ideal)
         (blowupCharts, Ideal, Symbol)
-        (blowupCharts, Ideal, ZZ, Symbol)
         (blowupCharts, DesingularizationStep, Ideal)
-        [blowupCharts, Exceptional]
     Headline
         Blowing up ideals of affine varieties and charts.  
     Usage

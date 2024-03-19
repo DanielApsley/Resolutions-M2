@@ -167,3 +167,25 @@ isResolved = method(Options => {Exceptional => false});
 isResolved(Ideal, ZZ) := opts -> (I, n) -> (
 
 );
+
+blowupCharts(Ideal, ZZ, Symbol) := opts -> (J, m, s) -> (
+	return blowupCharts(J, s)#m;
+);
+
+blowupCharts(Ideal, ZZ) := opts -> (J, m) -> (
+    u := local u;
+    return blowupCharts(J, u)#m;
+);
+
+blowupCharts(Ideal, Symbol) := opts -> (I, s) -> (
+	listofCharts := {};
+	for i from 1 to (#(flatten entries gens I)) do (
+		listofCharts = append(listofCharts, blowupCharts(I, i,s, opts))
+	);
+	listofCharts
+);
+
+blowupCharts(Ideal) := opts -> I -> (
+    u := local u;
+    blowupCharts(I, u)
+);
