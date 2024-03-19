@@ -50,7 +50,7 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {}}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {()}, Boundary => {divisor(sub(1, R))}}
 );
 
 desingStep(WeilDivisor) := D -> (
