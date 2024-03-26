@@ -88,7 +88,7 @@ projDesingStep(Ring) := opts -> R -> (
         -- if charts are U0, U1, U2, ..., Un
         -- want to only look for singualarities (to avoid redundancy) by looking in
         -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
-        checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
+        checkLocus := sub(ideal(apply(L_{0..(i-1)}, x->sub(x,affR))), affR);
         checkLoci = append(checkLoci, checkLocus);
         if opts#AuxiliaryData === false then (
             newChart = map(affR, affR, flatten entries vars affR);
@@ -266,13 +266,17 @@ blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
 
     newCharts := {};
     newExceptionals := {};
-    for phi in precharts do (
-        psi := variableChange(phi * structureB, s);
+    newCheckLoci := {};
+    for i from 0 to #precharts - 1 do (
+        phi := precharts#i;
+        varChangeMap := variableChange(target phi, s);
+        psi := varChangeMap*phi*structureB;
         newCharts = append(newCharts, psi);
         newExceptionals = append(newExceptionals, psi(J));
+        newCheckLoci = append(newCheckLoci, varChangeMap(D#CheckLoci#i));
     );
     if opts#AuxiliaryData === true then (
-        return (newCharts, newExceptionals, D#CheckLoci);
+        return (newCharts, newExceptionals, newCheckLoci);
     );
     if opts#AuxiliaryData === false then (
         return newCharts;
@@ -283,6 +287,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newStepNumber := S#StepNumber + 1;
     oldExceptionals := S#Exceptionals;
     oldCharts := S#Charts;
+    oldCheckLoci := S#CheckLoci;
     oldTargets := {};
     for f in oldCharts do (
         oldTargets = append(oldTargets, target(f))
@@ -337,6 +342,9 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         if #oldBoundary != 0 then(
                 boundarytoappend = append(boundarytoappend, divisor(f(sub(oldDIdeal, source f))));
         );
+
+        -- intersect each of the newcheckloci with the pullback of oldCheckLoci#Jringindex
+        newcheckloci = replace(i, newcheckloci#i + f(oldCheckLoci#Jringindex), newcheckloci);
     );
 
     -- Adding an empty exceptional divisor in each irrelevant chart. 
@@ -351,8 +359,8 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
     newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
     newBoundary := flatten replace(Jringindex, boundarytoappend, oldBoundary);
-    -- newCheckLoci := 
-    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, Boundary => newBoundary}
+    newCheckLoci := flatten replace(Jringindex, newcheckloci, oldCheckLoci);
+    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, CheckLoci => newCheckLoci, Boundary => newBoundary}
 );
 
 -- takes in and outputs desingularization step
