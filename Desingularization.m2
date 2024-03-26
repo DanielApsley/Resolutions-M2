@@ -580,6 +580,9 @@ restrictDivisor(WeilDivisor, Ideal) := (D,I) -> (
     p := map(S,R, {});
 
     J := ideal(D);
+    if isSubset(I,J) then (
+        return (divisor(p(J)), p);
+    );
     Jsat := saturate(J, I);
 
     return (divisor(p(Jsat)), p)

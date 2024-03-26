@@ -1,5 +1,5 @@
 needsPackage("Desingularization");
-needsPackage("Divisor")
+needsPackage("Divisor");
 --R = QQ[x,y];
 --m = ideal(x,y);
 
@@ -40,12 +40,18 @@ needsPackage("Divisor")
 --D3 = divisor(I3*J3);
 --a3 = nonSNCLocusAlongIdeal(D3,J3); -- expect (x,y)
 
-
+-- note: press "alt + enter" to run these commands in the terminal w/o copying & pasting
+needsPackage("Desingularization");
+needsPackage("Divisor");
 
 R = QQ[x,y];
-I = ideal(x,y);
+-- cusp, should require 2 blow-ups
+D = divisor(ideal(y^2-x^5));
 
+s1 = desingStep(D);
+locus = nonSNCLocus(s1);
+s1#Boundary#0
+s1#CheckLoci#0
+nonSNCLocusAlongIdeal(s1#Boundary#0,s1#CheckLoci#0)
 
-
-
-
+s2 = blowupCharts(s1,locus#0)
