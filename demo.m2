@@ -44,8 +44,12 @@ needsPackage("Divisor");
 needsPackage("Desingularization");
 needsPackage("Divisor");
 
-R = QQ[x,y];
+BaseRing = QQ[x,y]
+
+-- I = ideal(x^2*(1-y^3*x))
 -- cusp, should require 2 blow-ups
+I = ideal(y^2-x^3);
+curveResolution(I)
 D = divisor(ideal(y^2-x^5));
 
 s1 = desingStep(D);

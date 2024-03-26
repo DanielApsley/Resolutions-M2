@@ -356,11 +356,21 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         );
     );
 
-    newCharts := flatten replace(Jringindex, chartstoappend, oldCharts);
-    newExceptionals := flatten replace(Jringindex, exceptionalstoappend, oldExceptionals);
-    newBoundary := flatten replace(Jringindex, boundarytoappend, oldBoundary);
-    newCheckLoci := flatten replace(Jringindex, newcheckloci, oldCheckLoci);
-    new DesingularizationStep from {Charts => newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => newExceptionals, CheckLoci => newCheckLoci, Boundary => newBoundary}
+    newCharts := new MutableList from (flatten replace(Jringindex, chartstoappend, oldCharts));
+    newExceptionals := new MutableList from (flatten replace(Jringindex, exceptionalstoappend, oldExceptionals));
+    newBoundary := new MutableList from (flatten replace(Jringindex, boundarytoappend, oldBoundary));
+    newCheckLoci := new MutableList from (flatten replace(Jringindex, newcheckloci, oldCheckLoci));
+
+    -- post compose everything with flattenRing maps
+    flattenRingMaps := apply(newCharts, chart -> (prunedringMap(target(chart))));
+    for i from 0 to (#newblowupcharts - 1) do (
+        newCharts#i = flattenRingMaps#i * newCharts#i;
+        newExceptionals#i = apply(newExceptionals#i, exc -> flattenRingMaps#i(exc));
+        newBoundary#i = divisor(sub((flattenRingMaps#i)(ideal(newBoundary#i)), target(flattenRingMaps#i)));
+        newCheckLoci#i = sub((flattenRingMaps#i)(newCheckLoci#i), target(flattenRingMaps#i));
+    );
+
+    new DesingularizationStep from {Charts => new List from newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => new List from newExceptionals, CheckLoci => new List from newCheckLoci, Boundary => new List from newBoundary}
 );
 
 -- takes in and outputs desingularization step
@@ -427,10 +437,10 @@ strictTransform(DesingularizationStep, Ideal) := opts -> (S, I) -> (
     for i from 0 to (numofCharts - 1) do (
         exceptionalLoci := exceptionalDivisors#i;
         phi := listofCharts#i;
-        R := target phi;
+        targetRing := target phi;
         outputIdeal := (totalTransform(S, I))#i;	
         for E in exceptionalLoci do (
-		outputIdeal = saturate(outputIdeal, E)
+            outputIdeal = saturate(outputIdeal, E)
         );
         preoutputList = append(preoutputList, outputIdeal);
     );
