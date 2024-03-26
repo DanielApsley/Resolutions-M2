@@ -570,8 +570,6 @@ nonSNCLocus(DesingularizationStep) := S -> (
     return output
 );
 
--- This is not working, we need to fix nonSNCLocusAlongIdeal. 
-
 restrictDivisor = method();
 
 restrictDivisor(WeilDivisor, Ideal) := (D,I) -> (
