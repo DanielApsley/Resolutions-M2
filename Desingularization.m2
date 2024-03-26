@@ -32,7 +32,6 @@ export {
 -- Options
 "Exceptional",
 "Divisorial",
-"AuxiliaryInfo",
 "AuxiliaryData",
 -- Types and Terms
 "DesingularizationStep",
@@ -58,9 +57,9 @@ desingStep(WeilDivisor) := D -> (
     new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {{}}, Boundary => {D}}
 );
 
--- AuxiliaryInfo outputs the dehomogenization maps as charts. Intended for strictly internal use. 
+-- AuxiliaryData outputs the dehomogenization maps as charts. Intended for strictly internal use. 
 
-projDesingStep =  method(Options => {AuxiliaryInfo => false});
+projDesingStep =  method(Options => {AuxiliaryData => false});
 projDesingStep(Ring) := opts -> R -> (
     -- if isHomogeneous(R) == false then (
     --     error "expected homogeneous ring"
@@ -91,11 +90,11 @@ projDesingStep(Ring) := opts -> R -> (
         -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
         checkLocus := ideal(apply(L_{0..(i-1)}, x->sub(x,affR)));
         checkLoci = append(checkLoci, checkLocus);
-        if opts#AuxiliaryInfo === false then (
+        if opts#AuxiliaryData === false then (
             newChart = map(affR, affR, flatten entries vars affR);
             affCharts = append(affCharts, newChart);
         );
-        if opts#AuxiliaryInfo === true then (
+        if opts#AuxiliaryData === true then (
             for i from 0 to (#mappingVars - 1) do (
                 mappingVars = replace(i, sub(mappingVars#i, affR), mappingVars);
             );
@@ -103,9 +102,13 @@ projDesingStep(Ring) := opts -> R -> (
             affCharts = append(affCharts, newChart); 
         );
     );
+
+    newBoundary := {};
+    for C in affCharts do (
+        newBoundary = append(newBoundary, divisor(sub(1, target C)));
+    );
     
-    
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->{})}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
 );
 
 variableChange = method();
@@ -258,7 +261,7 @@ blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
     rees := B/a; -- Rees algebra of J
     structureB := map(rees, A, {});
 
-    D := projDesingStep(rees, AuxiliaryInfo => true);
+    D := projDesingStep(rees, AuxiliaryData => true);
     precharts := D#Charts;
 
     newCharts := {};
@@ -547,6 +550,19 @@ nonSNCLocusAlongIdeal(WeilDivisor, Ideal) := (D,I) -> (
     J := nonSNCLocus(E);
     preImage(p, J)
 );
+
+nonSNCLocus(DesingularizationStep) := S -> (
+    output := {};
+    numCharts := #(S#Charts);
+    for i from 0 to (numCharts - 1) do (
+        D := (S#Boundary)#i;
+        checkIdeal := (S#CheckLoci)#i;
+        output = append(output, nonSNCLocusAlongIdeal(D, checkIdeal));
+    );
+    return output
+);
+
+-- This is not working, we need to fix nonSNCLocusAlongIdeal. 
 
 restrictDivisor = method();
 

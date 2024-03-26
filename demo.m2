@@ -45,23 +45,7 @@ needsPackage("Divisor")
 R = QQ[x,y];
 I = ideal(x,y);
 
-blowupChartz = method(Options => {Exceptional => true});
 
-blowupChartz(Ideal, Symbol) := opts -> (J,s) -> (
-    a := reesIdeal(J); -- Ideal of rees algebra in affine space over A.
-	A := ring(J);
-    B := ring(a);
-    structureB := map(B/a, A, {});
 
-    rees := B/a; -- Rees algebra of J
-    D := projDesingStep(rees, AuxiliaryInfo => true);
-    precharts := D#Charts;
-
-    newCharts := {};
-    for phi in precharts do (
-        newCharts = append(newCharts, variableChange(phi * structureB, s));
-    );
-    return newCharts
-);
 
 
