@@ -29,6 +29,7 @@ export {
 "nonSNCLocusAlongIdeal",
 "normalizeStep",
 "projDesingStep",
+"prunedringMap",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -64,7 +65,7 @@ projDesingStep(Ring) := opts -> R -> (
     -- if isHomogeneous(R) == false then (
     --     error "expected homogeneous ring"
     -- );
-    L := flatten entries vars R;
+    L := flatten entries vars baseRing R;
     n := #L;
     k := coefficientRing(R);
     S := k[L];
@@ -363,7 +364,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
 
     -- post compose everything with flattenRing maps
     flattenRingMaps := apply(newCharts, chart -> (prunedringMap(target(chart))));
-    for i from 0 to (#newblowupcharts - 1) do (
+    for i from 0 to (#newCharts - 1) do (
         newCharts#i = flattenRingMaps#i * newCharts#i;
         newExceptionals#i = apply(newExceptionals#i, exc -> flattenRingMaps#i(exc));
         newBoundary#i = divisor(sub((flattenRingMaps#i)(ideal(newBoundary#i)), target(flattenRingMaps#i)));
@@ -635,6 +636,7 @@ curveResolution(Ideal) := I -> (
         idealList := primaryDecomposition(singularIdeal);
         m := idealList#0;
         movingStep = blowupCharts(movingStep, m);
+        print(peek movingStep);
     );
     movingStep
 );

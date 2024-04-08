@@ -44,11 +44,18 @@ needsPackage("Divisor");
 needsPackage("Desingularization");
 needsPackage("Divisor");
 
-BaseRing = QQ[x,y]
+R = QQ[x,y]
+step0 = desingStep(R)
+step1 = blowupCharts(step0, ideal(x,y))
+
+R1 = target(step1#Charts#0)
+m = ideal(T1_1, y)
+
+step2 = blowupCharts(step1, m)
 
 -- I = ideal(x^2*(1-y^3*x))
 -- cusp, should require 2 blow-ups
-I = ideal(y^2-x^3);
+I = ideal(y^2-x^7);
 curveResolution(I)
 D = divisor(ideal(y^2-x^5));
 
@@ -59,3 +66,18 @@ s1#CheckLoci#0
 nonSNCLocusAlongIdeal(s1#Boundary#0,s1#CheckLoci#0)
 
 s2 = blowupCharts(s1,locus#0)
+
+
+
+R = QQ[x,y]
+m = ideal(x,y)
+
+step0 = desingStep(R)
+step1 = blowupCharts(step0, m)
+
+peek step1
+
+
+R = QQ[x,y]
+S = R[t]/ideal(x*t-y)
+singularLocus(S)
