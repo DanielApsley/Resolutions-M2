@@ -61,16 +61,17 @@ desingStep(WeilDivisor) := D -> (
 -- AuxiliaryData outputs the dehomogenization maps as charts. Intended for strictly internal use. 
 
 projDesingStep =  method(Options => {AuxiliaryData => false});
-projDesingStep(Ring) := opts -> R -> (
+projDesingStep(Ideal) := opts -> a -> (
     -- if isHomogeneous(R) == false then (
     --     error "expected homogeneous ring"
     -- );
+    R := ring(a);
     L := flatten entries vars baseRing R;
     n := #L;
     k := coefficientRing(R);
     S := k[L];
     I := ideal R;
-    deg := degree I;
+    deg := -degree(a/a^2); -- will break if a does not define a curve
     affCharts := {};
     checkLoci := {};
     mappingVars := {};
@@ -106,10 +107,10 @@ projDesingStep(Ring) := opts -> R -> (
 
     newBoundary := {};
     for C in affCharts do (
-        newBoundary = append(newBoundary, divisor(sub(1, target C)));
+        newBoundary = append(newBoundary, divisor(C(a)));
     );
     
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^2), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
 );
 
 variableChange = method();
