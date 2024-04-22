@@ -61,20 +61,23 @@ desingStep(WeilDivisor) := D -> (
 -- AuxiliaryData outputs the dehomogenization maps as charts. Intended for strictly internal use. 
 
 projDesingStep =  method(Options => {AuxiliaryData => false});
-projDesingStep(Ideal) := opts -> a -> (
+projDesingStep(WeilDivisor) := opts -> D -> (
     -- if isHomogeneous(R) == false then (
     --     error "expected homogeneous ring"
     -- );
-    R := ring(a);
-    L := flatten entries vars baseRing R;
+    a := ideal D;
+    R := ring(D);
+    L := flatten entries vars R;
     n := #L;
     k := coefficientRing(R);
     S := k[L];
     I := ideal R;
-    deg := -degree(a/a^2); -- will break if a does not define a curve
+    dimn := dim(R) - 1;
+    deg := degree(ideal D); -- will break if a does not define a curve
     affCharts := {};
     checkLoci := {};
     mappingVars := {};
+    dehomogCharts := {};
     newChart := map(R,R, flatten entries vars R);
     for i from 0 to (n - 1) do (
         affineVars := delete(L#i, L);
@@ -92,25 +95,40 @@ projDesingStep(Ideal) := opts -> a -> (
         -- U0, U1\U0, U2\(U0 cup U1), ..., Un\(U0 cup U1 cup ... cup Un)
         checkLocus := sub(ideal(apply(L_{0..(i-1)}, x->sub(x,affR))), affR);
         checkLoci = append(checkLoci, checkLocus);
-        if opts#AuxiliaryData === false then (
+        if opts#AuxiliaryData == false then (
             newChart = map(affR, affR, flatten entries vars affR);
             affCharts = append(affCharts, newChart);
         );
-        if opts#AuxiliaryData === true then (
-            for i from 0 to (#mappingVars - 1) do (
+        for i from 0 to (#mappingVars - 1) do (
                 mappingVars = replace(i, sub(mappingVars#i, affR), mappingVars);
             );
-            newChart = map(affR, R, mappingVars);
-            affCharts = append(affCharts, newChart); 
+        newChart = map(affR, R, mappingVars);
+        dehomogCharts = append(dehomogCharts, newChart); 
+        if opts#AuxiliaryData == true then (
+            affCharts = dehomogCharts;
         );
     );
 
     newBoundary := {};
-    for C in affCharts do (
+    for C in dehomogCharts do (
         newBoundary = append(newBoundary, divisor(C(a)));
     );
     
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^dimn), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
+);
+
+projDesingStep(Ideal) := opts -> I -> (
+    if isHomogeneous(I) == false then (
+        error "expected homogenous ideal"
+    );
+    return projDesingStep(divisor(I), opts);
+);
+
+projDesingStep(Ring) := opts -> R -> (
+    if isHomogeneous(R) == false then (
+        error "expected graded ring"
+    );
+    return projDesingStep(ideal(sub(1, R)), opts);
 );
 
 variableChange = method();
