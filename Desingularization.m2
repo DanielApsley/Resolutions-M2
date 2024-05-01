@@ -329,6 +329,13 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         error "expected ideal of some chart"
     );
     
+    strictTransformD := ideal(oldBoundary#Jringindex);
+    for E in oldExceptionals#Jringindex do (
+        strictTransformD = saturate(strictTransformD, E);
+    );
+
+    error "what's up";
+
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;
     (newblowupcharts, newexceptionals, newcheckloci) := blowupCharts(J, newvariable, AuxiliaryData => true);

@@ -83,15 +83,4 @@ needsPackage("Divisor");
 -- singularLocus(S)
 
 -- To compute D^n for an n dimensional normal projective variety X and a Cartier divisor D. 
-topintersectionNumber = method();
-
-topintersectionNumber(WeilDivisor) := D -> (
-    -- check if D is Cartier
-    if isCartier(D, IsGraded => true) == false then (
-        error "D needs to be Cartier"
-    );
-    n = dim(ring(D)) - 1;
-    M = dualize(ideal(D));
-    return hilbertPolynomial(M, Projective => false);
-)
 
