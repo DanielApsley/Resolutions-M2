@@ -334,7 +334,9 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         strictTransformD = saturate(strictTransformD, E);
     );
 
-    error "what's up";
+    if newStepNumber > 1 then (
+        error "what's up";
+    );
 
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;
