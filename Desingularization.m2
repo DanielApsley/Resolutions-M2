@@ -377,10 +377,10 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     );
 
     -- Adding an empty exceptional divisor in each irrelevant chart. 
-    if newStepNumber > 1 then (
+    if newStepNumber > 0 then (
         numolds := #(oldExceptionals);
         for i from 0 to numolds - 1 do (
-            chartRing := ring((oldExceptionals#i)#0);
+            chartRing := target(oldCharts#i);
             oldExceptionals = replace(i, {append(oldExceptionals#i, sub(1, chartRing))}, oldExceptionals)
         );
     );
@@ -394,9 +394,12 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     flattenRingMaps := apply(newCharts, chart -> (prunedringMap(target(chart))));
     for i from 0 to (#newCharts - 1) do (
         newCharts#i = flattenRingMaps#i * newCharts#i;
-        newExceptionals#i = apply(newExceptionals#i, exc -> flattenRingMaps#i(exc));
         newBoundary#i = divisor(sub((flattenRingMaps#i)(ideal(newBoundary#i)), target(flattenRingMaps#i)));
         newCheckLoci#i = sub((flattenRingMaps#i)(newCheckLoci#i), target(flattenRingMaps#i));
+    );
+
+    for i from 0 to (#newExceptionals - 1) do (
+        newExceptionals#i = apply(newExceptionals#i, exc -> flattenRingMaps#i(exc));
     );
 
     new DesingularizationStep from {Charts => new List from newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => new List from newExceptionals, CheckLoci => new List from newCheckLoci, Boundary => new List from newBoundary}
