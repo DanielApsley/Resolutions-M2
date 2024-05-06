@@ -51,12 +51,12 @@ DesingularizationStep = new Type of MutableHashTable;
 desingStep = method();
 
 desingStep(Ring) := R -> (
-	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {{}}, Boundary => {divisor(sub(1, R))}}
+	new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => {{0}}, StepNumber => 0, Exceptionals => {{}}, Boundary => {divisor(sub(1, R))}}
 );
 
 desingStep(WeilDivisor) := D -> (
     R := ring(D);
-    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => matrix(0), StepNumber => 0, Exceptionals => {{}}, Boundary => {D}}
+    new DesingularizationStep from {Charts => {map(R, R, flatten entries vars R)}, CheckLoci => {ideal(sub(0,R))}, IntersectionMatrix => {{0}}, StepNumber => 0, Exceptionals => {{}}, Boundary => {D}}
 );
 
 -- AuxiliaryData outputs the dehomogenization maps as charts. Intended for strictly internal use. 
@@ -115,7 +115,7 @@ projDesingStep(WeilDivisor) := opts -> D -> (
         newBoundary = append(newBoundary, divisor(C(a)));
     );
     
-    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => matrix(deg^dimn), StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
+    return new DesingularizationStep from {Charts => affCharts, CheckLoci => checkLoci, IntersectionMatrix => {{deg^dimn}}, StepNumber => 0, Exceptionals => apply(affCharts, chart->{}), Boundary => newBoundary}
 );
 
 projDesingStep(Ideal) := opts -> I -> (
@@ -299,9 +299,9 @@ orderofVanishing(WeilDivisor, WeilDivisor) := (E, D) -> (
 
 -- Takes a double nested list and makes it and its entries mutable. I would like to make this unnecessary using mutable matrices somehow. An inverse function is also included for the intersection matrix programming.
 
-mutaBate = method();
+makeMutable = method();
 
-mutaBate(List) := L -> (
+makeMutable(List) := L -> (
     output := new MutableList from L;
     for i from 0 to (#L - 1) do (
         output#i = new MutableList from L#i;
@@ -309,9 +309,9 @@ mutaBate(List) := L -> (
     return output;
 );
 
-demutaBate = method();
+demakeMutable = method();
 
-demutaBate(MutableList) := L -> (
+demakeMutable(MutableList) := L -> (
     output := {};
     for i from 0 to (#L - 1) do (
         output = append(output, new List from (L#i));
@@ -356,9 +356,10 @@ blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
 
 blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newStepNumber := S#StepNumber + 1;
-    newMatrix := id_(ZZ^newStepNumber);
-    oldMatrixList := mutaBate(entries(S#IntersectionMatrix));
-    newMatrixList := mutaBate(entries(newMatrix));
+    matrixDim := #(S#IntersectionMatrix) + 1;
+    newMatrix := makeMutable(toList(matrixDim:(toList( matrixDim:0))));
+    -- oldMatrixList := makeMutable(entries(S#IntersectionMatrix));
+    -- newMatrixList := makeMutable(entries(newMatrix));
     oldExceptionals := S#Exceptionals;
     oldCharts := S#Charts;
     oldCheckLoci := S#CheckLoci;
@@ -382,13 +383,31 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     if Jrings != 1 then (
         error "expected ideal of some chart"
     );
-    
+
     strictTransformD := ideal(oldBoundary#Jringindex);
     for E in oldExceptionals#Jringindex do (
         strictTransformD = saturate(strictTransformD, E);
     );
 
     mu := orderofVanishing(J, strictTransformD);
+    ordersOfVanishingAtCenter := {mu};
+
+    for E in oldExceptionals#Jringindex do (
+        ordersOfVanishingAtCenter = append(ordersOfVanishingAtCenter, orderofVanishing(J, E));
+    );
+
+    for i from 0 to matrixDim-2 do (
+        for j from 0 to matrixDim-2 do (
+            (newMatrix#i)#j = ((S#IntersectionMatrix)#i)#j - (ordersOfVanishingAtCenter#i)*(ordersOfVanishingAtCenter#j);
+        );
+    );
+
+    for i from 0 to matrixDim-2 do (
+        (newMatrix#(matrixDim-1))#i = ordersOfVanishingAtCenter#i;
+        (newMatrix#i)#(matrixDim-1) = ordersOfVanishingAtCenter#i;
+    );
+
+    (newMatrix#(matrixDim-1))#(matrixDim-1) = -1;
 
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;
@@ -454,7 +473,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         newExceptionals#i = apply(newExceptionals#i, exc -> flattenRingMaps#i(exc));
     );
 
-    new DesingularizationStep from {Charts => new List from newCharts, IntersectionMatrix => matrix(0), StepNumber => newStepNumber, Exceptionals => new List from newExceptionals, CheckLoci => new List from newCheckLoci, Boundary => new List from newBoundary}
+    new DesingularizationStep from {Charts => new List from newCharts, IntersectionMatrix => demakeMutable(newMatrix), StepNumber => newStepNumber, Exceptionals => new List from newExceptionals, CheckLoci => new List from newCheckLoci, Boundary => new List from newBoundary}
 );
 
 -- takes in and outputs desingularization step
@@ -682,9 +701,9 @@ restrictDivisor(WeilDivisor, Ideal) := (D,I) -> (
 
 singularIndices = method();
 
-singularIndices(DesingularizationStep, Ideal) := (S, I) -> (
+singularIndices(DesingularizationStep) := (S) -> (
     output := {};
-    L := totalTransform(S, I);
+    L := apply(S#Boundary, x -> ideal(x));
     for i from 0 to (#L) - 1 do (
         if sub(nonSNCLocus(radical L#i), ring(L#i)) != ideal(sub(1, ring(L#i))) then (
             output = append(output, i);
@@ -693,33 +712,25 @@ singularIndices(DesingularizationStep, Ideal) := (S, I) -> (
     return output
 );
 
-singularIndices(DesingularizationStep, WeilDivisor) := (S, D) -> (
-    singularIndices(S, ideal(D));
-);
-
 curveResolution = method();
 
-curveResolution(Ideal) := I -> (
-    -- Checking that I defines a curve in a surface.
-    R := ring(I);
+curveResolution(DesingularizationStep) := S -> (
+    -- Checking that boundary defines a curve in a surface.
+    R := target(S#Charts#0);
     if dim R != 2 or (ideal singularLocus R != ideal(sub(1, R))) then (
         error "input is not in a smooth surface"
     );
 
-    if I != ideal(divisor(I)) then (
-        error "input does not define a curve"
-    );
-
     -- Running the algorithm. 
-    movingStep := desingStep(ring I);
-    while singularIndices(movingStep, I) != {} do (
-        L := totalTransform(movingStep, I);
-        i := (singularIndices(movingStep, I))#0;
+    movingStep := S;
+    while singularIndices(movingStep) != {} do (
+        L := apply(movingStep#Boundary, x -> ideal(x));
+        i := (singularIndices(movingStep))#0;
         singularIdeal := trim radical nonSNCLocus(radical L#i);
         idealList := primaryDecomposition(singularIdeal);
         m := idealList#0;
         movingStep = blowupCharts(movingStep, m);
-        print(peek movingStep);
+        -- print(movingStep#IntersectionMatrix);
     );
     movingStep
 );
@@ -727,6 +738,7 @@ curveResolution(Ideal) := I -> (
 curveResolution(WeilDivisor) := D -> (
     curveResolution(ideal D)
 );
+
 
 
 beginDocumentation()
@@ -1041,22 +1053,18 @@ doc ///
 doc ///
     Key 
         singularIndices
-        (singularIndices, DesingularizationStep, Ideal)
-        (singularIndices, DesingularizationStep, WeilDivisor)
+        (singularIndices, DesingularizationStep)
     Headline
         Finds the charts where the total transform is not SNC. 
     Usage
-        singularIndices(S, I)
-        singularIndices(S, D)
+        singularIndices(S)
     Inputs
         S: DesingularizationStep
-        I: Ideal
-        D: WeilDivisor
     Outputs
         : List
     Description
         Text
-         This method finds the charts in S where the total transform of I is not SNC. 
+         This method finds the charts in S where the total transform of boundary is not SNC. 
     SeeAlso
         totalTransform
 ///
@@ -1064,21 +1072,18 @@ doc ///
 doc ///
     Key 
         curveResolution
-        (curveResolution, Ideal)
-        (curveResolution, WeilDivisor)
+        (curveResolution, DesingularizationStep)
     Headline
         Finds an embedded resolution of a curve (effective weil divisor) in a smooth surface.
     Usage
-        curveResolution(I)
-        curveREsolution(D)
+        curveResolution(S)
     Inputs
-        I: Ideal
-        D: WeilDivisor
+        S: DesingularizationStep
     Outputs
         : DesingularizationStep
     Description
         Text
-         This repeatedly blows up non-SNC points until the total transform of D has SNC support. 
+         This repeatedly blows up non-SNC points until the total transform of the boundary has SNC support. 
     SeeAlso
         totalTransform
 ///

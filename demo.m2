@@ -84,17 +84,24 @@ needsPackage("Divisor");
 
 -- To compute D^n for an n dimensional normal projective variety X and a Cartier divisor D. 
 
+
+-- R = QQ[x,y,z];
+-- D = divisor(x*y^2 - z^3);
+-- S = projDesingStep(D);
+
+-- curveResolution(S);
+
+-- Chartring = target((S#Charts)#0);
+
+-- m = sub(ideal(y,z), Chartring);
+
+-- S1 = blowupCharts(S, m);
+
+needsPackage("Desingularization");
+needsPackage("Divisor");
+
 R = QQ[x,y,z];
-D = divisor(x*y^2 - z^3);
-S = projDesingStep(D);
-
-Chartring = target((S#Charts)#0);
-
-m = sub(ideal(y,z), Chartring);
-
-S1 = blowupCharts(S, m);
-
--- R = QQ[x,y];
+curveResolution(projDesingStep(divisor(z*x^2-y^3)));
 -- D = divisor(x^2 - y^3);
 -- S = desingStep(D);
 -- m = ideal(x,y);
@@ -102,6 +109,8 @@ S1 = blowupCharts(S, m);
 
 -- R1 = target (S1#Charts)#0;
 -- m1 = sub(ideal(T1_1, y), R1);
+
+-- S2 = blowupCharts(S1, m1);
 
 -- Included here for testing since it won't be exported.
 
