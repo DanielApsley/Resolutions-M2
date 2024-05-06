@@ -30,6 +30,7 @@ export {
 "normalizeStep",
 "projDesingStep",
 "prunedringMap",
+"orderofVanishing",
 -- Options
 "Exceptional",
 "Divisorial",
@@ -270,6 +271,54 @@ baseChangeRingMap(RingMap, Ring) := (F, L) -> (
     return LF;
 );
 
+-- ooV Method below: Takes in ideals p and J and finds the largest m so that J is contained in p^m. In particular, if p is the ideal of a prime divisor Z, and J is the ideal of an effective divisor D, this should pick of the coefficient of Z in D. 
+
+-- This strategy could be a problem if we blow up singular points, but I'm not sure tbh. 
+
+orderofVanishing = method();
+
+orderofVanishing(Ideal, Ideal) := (p, J) -> (
+    S := associatedPrimes(J);
+    if isSubset(J, p) == false then (
+        return 0;
+    );
+    m := 0;
+    while isSubset(J, p^(m + 1)) == true do (
+        m = m + 1;
+    );
+    return m;
+);
+
+orderofVanishing(Ideal, WeilDivisor) := (p, D) -> (
+    return orderofVanishing(p, ideal(D))
+);
+
+orderofVanishing(WeilDivisor, WeilDivisor) := (E, D) -> (
+    return orderofVanishing(ideal E, D)
+);
+
+-- Takes a double nested list and makes it and its entries mutable. I would like to make this unnecessary using mutable matrices somehow. An inverse function is also included for the intersection matrix programming.
+
+mutaBate = method();
+
+mutaBate(List) := L -> (
+    output := new MutableList from L;
+    for i from 0 to (#L - 1) do (
+        output#i = new MutableList from L#i;
+    );
+    return output;
+);
+
+demutaBate = method();
+
+demutaBate(MutableList) := L -> (
+    output := {};
+    for i from 0 to (#L - 1) do (
+        output = append(output, new List from (L#i));
+    );
+    return output;
+);
+
 
 blowupCharts = method(Options => {AuxiliaryData => false});
 
@@ -303,8 +352,13 @@ blowupCharts(Ideal, Symbol) := opts -> (J,s) -> (
     );
 );
 
+-- Do we ever use options here? Intersection matrix may be better as an optional output somehow, since it is only a 2-dim matrix in the surface case. In the n-dimensional case it wouldn't be hard to have a n^n matrix output with top intersection numbers, but I'm not sure how helpful this data would be in pratice. (ie. if the dual complex can be recovered from this matrix.)
+
 blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
     newStepNumber := S#StepNumber + 1;
+    newMatrix := id_(ZZ^newStepNumber);
+    oldMatrixList := mutaBate(entries(S#IntersectionMatrix));
+    newMatrixList := mutaBate(entries(newMatrix));
     oldExceptionals := S#Exceptionals;
     oldCharts := S#Charts;
     oldCheckLoci := S#CheckLoci;
@@ -334,9 +388,7 @@ blowupCharts(DesingularizationStep, Ideal) := opts -> (S, J) -> (
         strictTransformD = saturate(strictTransformD, E);
     );
 
-    if newStepNumber > 1 then (
-        error "what's up";
-    );
+    mu := orderofVanishing(J, strictTransformD);
 
     prenewvariable := concatenate{"T", toString(newStepNumber)};
     newvariable := getSymbol prenewvariable;

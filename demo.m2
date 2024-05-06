@@ -103,6 +103,27 @@ S1 = blowupCharts(S, m);
 -- R1 = target (S1#Charts)#0;
 -- m1 = sub(ideal(T1_1, y), R1);
 
+-- Included here for testing since it won't be exported.
+
+mutaBate = method();
+
+mutaBate(List) := L -> (
+    output := new MutableList from L;
+    for i from 0 to (#L - 1) do (
+        output#i = new MutableList from L#i;
+    );
+    return output;
+);
+
+demutaBate = method();
+
+demutaBate(MutableList) := L -> (
+    output := {};
+    for i from 0 to (#L - 1) do (
+        output = append(output, new List from (L#i));
+    );
+    return output;
+);
 
 
 
